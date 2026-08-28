@@ -29,6 +29,14 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/accommodations', require('./routes/accommodationRoutes'));
 app.use('/api/reservations', require('./routes/reservationRoutes'));
 
+// Health check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Airbnb API is running'
+  });
+});
+
 // Error handler (must be after all routes)
 app.use(errorHandler);
 
