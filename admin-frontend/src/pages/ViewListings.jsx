@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { BACKEND_URL } from '../services/api';
 
 /**
  * View Listings Page
@@ -121,7 +121,7 @@ const ViewListings = () => {
                     <img
                       src={
                         listing.images?.[0]
-                          ? `http://localhost:5000/uploads/${listing.images[0]}`
+                          ? `${BACKEND_URL}/uploads/${listing.images[0]}`
                           : 'https://via.placeholder.com/80x60?text=No+Image'
                       }
                       alt={listing.title}
