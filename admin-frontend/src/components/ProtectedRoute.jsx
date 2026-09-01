@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
  * Optionally checks for host/admin role
  */
 const ProtectedRoute = ({ children, requireHost = false }) => {
-  const { user, isAuthenticated, isHost, loading } = useAuth();
+  const { isAuthenticated, isHost, loading } = useAuth();
 
   if (loading) {
     return (
