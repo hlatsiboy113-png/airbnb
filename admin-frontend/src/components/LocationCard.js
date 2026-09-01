@@ -1,12 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE = 'http://localhost:5000';
+import { BACKEND_URL } from '../utils/api';
 
 const LocationCard = ({ accommodation }) => {
   const navigate = useNavigate();
   const { _id, images, type, title, location, amenities, rating, reviews, price } = accommodation;
-  const imageUrl = images && images.length > 0 ? `${API_BASE}${images[0]}` : null;
+  const imageUrl = images && images.length > 0 ? `${BACKEND_URL}/uploads/${images[0]}` : null;
 
   return (
     <div className="location-card" onClick={() => navigate(`/listing/${_id}`)}>
