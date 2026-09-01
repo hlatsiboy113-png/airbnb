@@ -16,6 +16,12 @@ const createReservation = async (req, res, next) => {
       return next(new AppError('Accommodation not found', 404));
     }
 
+    if (accommodation.guests && Number(guests) > accommodation.guests) {
+      return next(
+        new AppError(`This accommodation only accommodates up to ${accommodation.guests} guests`, 400)
+      );
+    }
+
     const nights = Math.ceil(
       (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24)
     );
