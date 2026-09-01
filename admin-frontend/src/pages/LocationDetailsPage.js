@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import { useParams } from 'react-router-dom';
+import api, { BACKEND_URL } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-
-const API_BASE = 'http://localhost:5000';
 
 const LocationDetailsPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [acc, setAcc] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -24,6 +21,7 @@ const LocationDetailsPage = () => {
 
   useEffect(() => {
     fetchAccommodation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when the id param changes
   }, [id]);
 
   const fetchAccommodation = async () => {
@@ -93,8 +91,8 @@ const LocationDetailsPage = () => {
   if (!acc) return <div className="error">Accommodation not found</div>;
 
   const images = acc.images || [];
-  const mainImage = images[0] ? `${API_BASE}${images[0]}` : null;
-  const galleryImages = images.slice(1, 5).map((img) => `${API_BASE}${img}`);
+  const mainImage = images[0] ? `${BACKEND_URL}/uploads/${images[0]}` : null;
+  const galleryImages = images.slice(1, 5).map((img) => `${BACKEND_URL}/uploads/${img}`);
 
   return (
     <div className="details-page">
