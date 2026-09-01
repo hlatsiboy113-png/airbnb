@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 /**
@@ -59,9 +58,7 @@ const LoginPage = () => {
     setApiError('');
 
     try {
-      const response = await api.post('/users/login', formData);
-      const { token, user } = response.data;
-      login(user, token);
+      await login(formData.email, formData.password);
       navigate('/admin/dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
