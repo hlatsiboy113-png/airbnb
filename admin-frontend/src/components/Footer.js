@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/anchor-is-valid -- decorative placeholder footer links, not yet wired to real pages */
 import React from 'react';
 const footerLinks = { Support: ['Help Centre','AirCover','Anti-discrimination','Disability support','Cancellation options','Report neighbourhood concern'], Community: ['Airbnb.org: disaster relief housing','Combating discrimination'], Hosting: ['Airbnb your home','AirCover for Hosts','Hosting resources','Community forum','Hosting responsibly','Join a free Hosting class'], Airbnb: ['Newsroom','New features','Careers','Investors','Gift cards','Airbnb.org emergency stays'] };
 const Footer = () => (
