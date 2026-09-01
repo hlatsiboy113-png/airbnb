@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) { api.defaults.headers.common['Authorization'] = `Bearer ${token}`; fetchUser(); }
     else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, []);
   const fetchUser = async () => {
     try { const res = await api.get('/users/me'); setUser(res.data.data); }
@@ -21,6 +22,8 @@ export const AuthProvider = ({ children }) => {
     setUser(user); return user;
   };
   const logout = () => { localStorage.removeItem('token'); delete api.defaults.headers.common['Authorization']; setUser(null); };
-  return <AuthContext.Provider value={{ user, login, logout, loading }}>{children}</AuthContext.Provider>;
+  const isAuthenticated = !!user;
+  const isHost = user?.role === 'host' || user?.role === 'admin';
+  return <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated, isHost }}>{children}</AuthContext.Provider>;
 };
 export const useAuth = () => useContext(AuthContext);
