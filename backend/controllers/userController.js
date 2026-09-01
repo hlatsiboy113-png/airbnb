@@ -48,12 +48,36 @@ const loginUser = async (req, res, next) => {
 };
 
 /**
- * @desc    Seed test users for development
+ * @desc    Get the currently authenticated user's profile
+ * @route   GET /api/users/me
+ * @access  Private
+ */
+const getMe = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      status: 'success',
+      data: {
+        _id: req.user._id,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Seed test users for development only
  * @route   POST /api/users/seed
- * @access  Public (remove in production)
+ * @access  Public in development, blocked in production
  */
 const seedUsers = async (req, res, next) => {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      return next(new AppError('Not found', 404));
+    }
     await User.deleteMany();
     const users = await User.create([
       {
@@ -81,4 +105,4 @@ const seedUsers = async (req, res, next) => {
   }
 };
 
-module.exports = { loginUser, seedUsers };
+module.exports = { loginUser, seedUsers, getMe };

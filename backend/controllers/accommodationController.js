@@ -2,6 +2,14 @@ const Accommodation = require('../models/Accommodation');
 const AppError = require('../utils/AppError');
 
 /**
+ * Escape regex special characters so user input can't be used to build
+ * an unintended or catastrophic regular expression.
+ * @param {string} str
+ * @returns {string}
+ */
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
  * @desc    Get all accommodations with optional location filter
  * @route   GET /api/accommodations
  * @access  Public
@@ -9,7 +17,7 @@ const AppError = require('../utils/AppError');
 const getAccommodations = async (req, res, next) => {
   try {
     const { location } = req.query;
-    const filter = location ? { location: new RegExp(location, 'i') } : {};
+    const filter = location ? { location: new RegExp(escapeRegex(location), 'i') } : {};
 
     const accommodations = await Accommodation.find(filter).populate('host', 'username');
 
