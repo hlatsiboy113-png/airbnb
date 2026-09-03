@@ -1,0 +1,730 @@
+From 2a34050c222008c9f0130bf83924d38de290671e Mon Sep 17 00:00:00 2001
+From: Phase 1 Auth Audit <phase1-audit@local>
+Date: Thu, 3 Sep 2026 08:53:28 +0000
+Subject: [PATCH] feat: add Airbnb-style search, functional filters, and expand
+ listings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+SEARCH:
+- Add a new SearchBar component (Where/When/Who/Search) replacing the
+  basic destination-only input in Header. Destination navigates to the
+  matching /locations/:location page; check-in/check-out and guest
+  count are passed through as query params.
+
+FILTERS:
+- Extend GET /api/accommodations to support minPrice, maxPrice, type,
+  guests (minimum capacity), minRating, and amenities query filters,
+  applied as real Mongoose query conditions (not client-side only).
+  Non-numeric values are ignored rather than erroring. Covered by two
+  new backend tests plus a manual spot-check verifying the exact
+  filter object built from a realistic combined query.
+- LocationPage now reads guests/checkIn/checkOut from the search bar's
+  query params and exposes a Filters bar (price range, property type,
+  min rating, amenities) wired to the same endpoint, with a working
+  Clear Filters button. Dates are shown for context only — there is no
+  availability/booking-calendar backend yet, so they do not filter
+  results; documented as a known limitation rather than implemented
+  as if functional.
+
+LISTINGS:
+- Expand seed data from 16 to 36 accommodations across 11 locations:
+  5 South African cities (Cape Town, Johannesburg, Durban, Pretoria,
+  Soweto) and 6 international (New York, Paris, Tokyo, London, Dubai,
+  plus the pre-existing Canmore). Verified programmatically (no live
+  DB available): 36 entries, zero duplicate title+location pairs, no
+  missing required fields, every listing has at least one image.
+  Images reuse the existing, already-shipped Unsplash URL pool rather
+  than introducing new unverified ones, since no browser is available
+  in this environment to visually confirm new URLs load.
+
+CARDS:
+- Add a favorite heart toggle to LocationCard, persisted in
+  localStorage (durable across refresh; not a backend-tracked
+  feature — noted as a UI-only affordance).
+- Tighten the listings grid breakpoints (~4-5 cols desktop, ~2-3
+  tablet, 1 mobile) instead of relying on a single auto-fill value
+  that collapsed to 1 column at the tablet breakpoint.
+
+Verified: 36/36 backend tests pass (npm test); CI=true react-scripts
+build compiles cleanly. Not verified: live rendering in a browser
+(none available in this environment) — CSS layout and Unsplash image
+loading should be spot-checked visually before considering this
+final.
+---
+ admin-frontend/src/App.css                    |  52 +++++--
+ admin-frontend/src/components/Header.js       |  15 +-
+ admin-frontend/src/components/LocationCard.js |  33 ++++-
+ admin-frontend/src/components/SearchBar.js    | 132 +++++++++++++++++
+ admin-frontend/src/pages/LocationPage.js      | 134 ++++++++++++++++--
+ .../controllers/accommodationController.js    |  37 ++++-
+ backend/tests/accommodations.test.js          |  36 +++++
+ backend/utils/defaultAccommodations.js        |  63 ++++++++
+ 8 files changed, 466 insertions(+), 36 deletions(-)
+ create mode 100644 admin-frontend/src/components/SearchBar.js
+
+diff --git a/admin-frontend/src/App.css b/admin-frontend/src/App.css
+index 14fe26d..9e92970 100644
+--- a/admin-frontend/src/App.css
++++ b/admin-frontend/src/App.css
+@@ -8,11 +8,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
+ .public-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 48px; background: #fff; border-bottom: 1px solid #ebebeb; position: sticky; top: 0; z-index: 100; }
+ .logo-link { display: flex; align-items: center; gap: 4px; text-decoration: none; color: #ff5a5f; font-size: 22px; font-weight: 700; }
+ .logo-icon { font-size: 28px; }
+-.header-center { flex: 1; max-width: 400px; margin: 0 24px; }
+-.search-bar { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); padding: 4px; transition: box-shadow 0.2s; }
+-.search-bar:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.12); }
+-.search-bar input { flex: 1; border: none; outline: none; padding: 10px 16px; font-size: 14px; background: transparent; }
+-.search-btn { background: #ff5a5f; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
++.header-center { flex: 1; max-width: 560px; margin: 0 24px; }
++
++/* ===== AIRBNB-STYLE SEARCH BAR ===== */
++.airbnb-search-bar { display: flex; align-items: stretch; border: 1px solid #ddd; border-radius: 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: box-shadow 0.2s; position: relative; background: #fff; }
++.airbnb-search-bar:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.12); }
++.search-section { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 6px 20px; cursor: pointer; border-radius: 32px; min-width: 0; flex: 1; }
++.search-section.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 2; }
++.search-section label { font-size: 11px; font-weight: 600; color: #222; }
++.search-section input { border: none; outline: none; background: transparent; font-size: 13px; color: #222; padding: 0; width: 100%; }
++.search-section input::placeholder { color: #717171; }
++.search-value { font-size: 13px; color: #717171; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.search-divider { width: 1px; background: #ddd; margin: 10px 0; }
++.search-btn { background: #ff5a5f; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; margin: 6px 6px 6px 0; flex-shrink: 0; }
++.search-popover { position: absolute; top: calc(100% + 12px); left: 0; background: #fff; border: 1px solid #ddd; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 16px; z-index: 300; display: flex; gap: 16px; min-width: 260px; }
++.search-popover-who { flex-direction: column; gap: 8px; min-width: 180px; }
++.date-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #717171; }
++.date-field input { border: 1px solid #ddd; border-radius: 8px; padding: 6px 8px; font-size: 13px; }
++.guest-stepper { display: flex; align-items: center; gap: 12px; }
++.guest-stepper button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #b0b0b0; background: #fff; cursor: pointer; font-size: 16px; line-height: 1; }
++.guest-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+ .header-right { position: relative; }
+ .profile-section, .auth-section { display: flex; align-items: center; gap: 12px; }
+ .greeting { font-size: 14px; color: #717171; }
+@@ -90,14 +105,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
+ .location-filter { display: flex; gap: 8px; }
+ .location-filter input { padding: 10px 16px; border: 1px solid #ddd; border-radius: 32px; font-size: 14px; min-width: 240px; }
+ .location-filter button { background: #ff5a5f; color: #fff; border: none; padding: 10px 20px; border-radius: 32px; font-size: 14px; font-weight: 600; cursor: pointer; }
+-.locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
++.location-search-summary { display: flex; gap: 12px; margin-top: 4px; font-size: 13px; color: #717171; }
++
++/* ===== FILTERS BAR ===== */
++.filters-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; padding: 16px 0 24px; margin-bottom: 8px; border-bottom: 1px solid #ebebeb; }
++.filter-field { display: flex; flex-direction: column; gap: 4px; }
++.filter-field label { font-size: 12px; font-weight: 600; color: #717171; }
++.filter-field input, .filter-field select { border: 1px solid #ddd; border-radius: 8px; padding: 8px 10px; font-size: 13px; min-width: 110px; }
++.clear-filters-btn { background: #fff; color: #222; border: 1px solid #222; border-radius: 20px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; height: fit-content; }
++.clear-filters-btn:hover { background: #f7f7f7; }
++.locations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+ 
+ /* ===== LOCATION CARD ===== */
+ .location-card { cursor: pointer; transition: transform 0.2s; }
+ .location-card:hover { transform: translateY(-2px); }
+-.location-card-image { height: 260px; border-radius: 12px; overflow: hidden; margin-bottom: 12px; background: #f0f0f0; }
++.location-card-image { position: relative; height: 260px; border-radius: 12px; overflow: hidden; margin-bottom: 12px; background: #f0f0f0; }
+ .location-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+ .location-card:hover .location-card-image img { transform: scale(1.03); }
++.favorite-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.35); border: none; border-radius: 50%; width: 32px; height: 32px; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.15s; }
++.favorite-btn:hover { transform: scale(1.1); }
++.favorite-btn.active { color: #ff385c; }
+ .no-image { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; }
+ .location-card-body { padding: 0 4px; }
+ .location-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+@@ -239,13 +266,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
+ @media (max-width: 768px) {
+   .public-header { padding: 12px 16px; flex-wrap: wrap; }
+   .header-center { order: 3; width: 100%; margin: 8px 0 0 0; max-width: none; }
++  .airbnb-search-bar { border-radius: 24px; }
++  .search-section { padding: 8px 12px; }
++  .search-divider { display: none; }
++  .search-value { max-width: 70px; }
++  .search-popover { left: 50%; transform: translateX(-50%); flex-direction: column; }
+   .hero-content h1 { font-size: 36px; }
+   .hero-banner { height: 350px; }
+   .inspiration-grid { grid-template-columns: 1fr; }
+   .destinations-list { grid-template-columns: repeat(2, 1fr); }
+   .footer-columns { grid-template-columns: repeat(2, 1fr); }
+-  .locations-grid { grid-template-columns: 1fr; }
++  .locations-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+   .location-header { flex-direction: column; align-items: flex-start; }
++  .filters-bar { gap: 10px; }
++  .filter-field { min-width: 45%; }
++  .filter-field input, .filter-field select { min-width: 0; width: 100%; }
+   .home-content { padding: 24px 16px; }
+   .shop-section { padding: 24px; }
+   .details-page { padding: 16px; }
+@@ -259,4 +294,5 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxyge
+   .footer-copyright { flex-direction: column; text-align: center; }
+   .details-header h1 { font-size: 20px; }
+   .cost-row { font-size: 14px; }
++  .locations-grid { grid-template-columns: 1fr; }
+ }
+diff --git a/admin-frontend/src/components/Header.js b/admin-frontend/src/components/Header.js
+index c44aaae..cb5338e 100644
+--- a/admin-frontend/src/components/Header.js
++++ b/admin-frontend/src/components/Header.js
+@@ -1,10 +1,10 @@
+ import React, { useState, useRef, useEffect } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+ import { useAuth } from '../context/AuthContext';
++import SearchBar from './SearchBar';
+ 
+ const Header = () => {
+   const { user, login, logout, isHost } = useAuth();
+-  const [searchQuery, setSearchQuery] = useState('');
+   const [dropdownOpen, setDropdownOpen] = useState(false);
+   const [loginModalOpen, setLoginModalOpen] = useState(false);
+   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+@@ -21,14 +21,6 @@ const Header = () => {
+     return () => document.removeEventListener('mousedown', handleClickOutside);
+   }, []);
+ 
+-  const handleSearch = (e) => {
+-    e.preventDefault();
+-    if (searchQuery.trim()) {
+-      navigate(`/locations/${encodeURIComponent(searchQuery.trim())}`);
+-      setSearchQuery('');
+-    }
+-  };
+-
+   const handleLogin = async (e) => {
+     e.preventDefault();
+     setLoginError('');
+@@ -54,10 +46,7 @@ const Header = () => {
+           </Link>
+         </div>
+         <div className="header-center">
+-          <form onSubmit={handleSearch} className="search-bar">
+-            <input type="text" placeholder="Search destinations" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+-            <button type="submit" className="search-btn">🔍</button>
+-          </form>
++          <SearchBar />
+         </div>
+         <div className="header-right" ref={dropdownRef}>
+           {user ? (
+diff --git a/admin-frontend/src/components/LocationCard.js b/admin-frontend/src/components/LocationCard.js
+index a09c89b..ccacc4a 100644
+--- a/admin-frontend/src/components/LocationCard.js
++++ b/admin-frontend/src/components/LocationCard.js
+@@ -1,16 +1,47 @@
+-import React from 'react';
++import React, { useState, useCallback } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { getImageUrl } from '../services/api';
+ 
++const FAVORITES_KEY = 'favoriteAccommodations';
++
++const readFavorites = () => {
++  try {
++    return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY)) || []);
++  } catch {
++    return new Set();
++  }
++};
++
+ const LocationCard = ({ accommodation }) => {
+   const navigate = useNavigate();
+   const { _id, images, type, title, location, amenities, rating, reviews, price } = accommodation;
+   const imageUrl = images && images.length > 0 ? getImageUrl(images[0]) : null;
++  const [isFavorite, setIsFavorite] = useState(() => readFavorites().has(_id));
++
++  const toggleFavorite = useCallback((e) => {
++    e.stopPropagation();
++    const favorites = readFavorites();
++    if (favorites.has(_id)) {
++      favorites.delete(_id);
++    } else {
++      favorites.add(_id);
++    }
++    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
++    setIsFavorite(favorites.has(_id));
++  }, [_id]);
+ 
+   return (
+     <div className="location-card" onClick={() => navigate(`/listing/${_id}`)}>
+       <div className="location-card-image">
+         {imageUrl ? <img src={imageUrl} alt={title} loading="lazy" /> : <div className="no-image">No Image</div>}
++        <button
++          type="button"
++          className={`favorite-btn ${isFavorite ? 'active' : ''}`}
++          onClick={toggleFavorite}
++          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
++        >
++          {isFavorite ? '♥' : '♡'}
++        </button>
+       </div>
+       <div className="location-card-body">
+         <div className="location-card-header">
+diff --git a/admin-frontend/src/components/SearchBar.js b/admin-frontend/src/components/SearchBar.js
+new file mode 100644
+index 0000000..ef97ca1
+--- /dev/null
++++ b/admin-frontend/src/components/SearchBar.js
+@@ -0,0 +1,132 @@
++import React, { useState, useRef, useEffect } from 'react';
++import { useNavigate } from 'react-router-dom';
++
++/**
++ * Airbnb-style search bar with Where / When / Who sections.
++ * Fully functional: destination navigates to the matching location page,
++ * with check-in/check-out dates and guest count passed through as query
++ * params that LocationPage reads and applies.
++ */
++const SearchBar = () => {
++  const navigate = useNavigate();
++  const containerRef = useRef(null);
++  const [openSection, setOpenSection] = useState(null); // 'where' | 'when' | 'who' | null
++  const [destination, setDestination] = useState('');
++  const [checkIn, setCheckIn] = useState('');
++  const [checkOut, setCheckOut] = useState('');
++  const [guests, setGuests] = useState(1);
++
++  useEffect(() => {
++    const handleClickOutside = (e) => {
++      if (containerRef.current && !containerRef.current.contains(e.target)) {
++        setOpenSection(null);
++      }
++    };
++    document.addEventListener('mousedown', handleClickOutside);
++    return () => document.removeEventListener('mousedown', handleClickOutside);
++  }, []);
++
++  const toggleSection = (section) => {
++    setOpenSection((current) => (current === section ? null : section));
++  };
++
++  const handleSearch = (e) => {
++    e.preventDefault();
++    const dest = destination.trim();
++    if (!dest) {
++      setOpenSection('where');
++      return;
++    }
++    const params = new URLSearchParams();
++    if (checkIn) params.set('checkIn', checkIn);
++    if (checkOut) params.set('checkOut', checkOut);
++    if (guests > 1) params.set('guests', String(guests));
++    const query = params.toString();
++    navigate(`/locations/${encodeURIComponent(dest)}${query ? `?${query}` : ''}`);
++    setOpenSection(null);
++  };
++
++  const adjustGuests = (delta) => {
++    setGuests((current) => Math.max(1, Math.min(16, current + delta)));
++  };
++
++  const whenLabel = checkIn || checkOut
++    ? `${checkIn || 'Any'} \u2192 ${checkOut || 'Any'}`
++    : 'Add dates';
++  const whoLabel = guests > 1 ? `${guests} guests` : 'Add guests';
++
++  return (
++    <form className="airbnb-search-bar" onSubmit={handleSearch} ref={containerRef}>
++      <div
++        className={`search-section search-where ${openSection === 'where' ? 'active' : ''}`}
++        onClick={() => setOpenSection('where')}
++      >
++        <label>Where</label>
++        <input
++          type="text"
++          placeholder="Search destinations"
++          value={destination}
++          onChange={(e) => setDestination(e.target.value)}
++          onFocus={() => setOpenSection('where')}
++        />
++      </div>
++
++      <div className="search-divider" />
++
++      <div
++        className={`search-section search-when ${openSection === 'when' ? 'active' : ''}`}
++        onClick={(e) => { e.stopPropagation(); toggleSection('when'); }}
++      >
++        <label>When</label>
++        <span className="search-value">{whenLabel}</span>
++        {openSection === 'when' && (
++          <div className="search-popover" onClick={(e) => e.stopPropagation()}>
++            <div className="date-field">
++              <label htmlFor="search-checkin">Check-in</label>
++              <input
++                id="search-checkin"
++                type="date"
++                value={checkIn}
++                onChange={(e) => setCheckIn(e.target.value)}
++              />
++            </div>
++            <div className="date-field">
++              <label htmlFor="search-checkout">Check-out</label>
++              <input
++                id="search-checkout"
++                type="date"
++                value={checkOut}
++                min={checkIn || undefined}
++                onChange={(e) => setCheckOut(e.target.value)}
++              />
++            </div>
++          </div>
++        )}
++      </div>
++
++      <div className="search-divider" />
++
++      <div
++        className={`search-section search-who ${openSection === 'who' ? 'active' : ''}`}
++        onClick={(e) => { e.stopPropagation(); toggleSection('who'); }}
++      >
++        <label>Who</label>
++        <span className="search-value">{whoLabel}</span>
++        {openSection === 'who' && (
++          <div className="search-popover search-popover-who" onClick={(e) => e.stopPropagation()}>
++            <span>Guests</span>
++            <div className="guest-stepper">
++              <button type="button" onClick={() => adjustGuests(-1)} disabled={guests <= 1} aria-label="Decrease guests">-</button>
++              <span>{guests}</span>
++              <button type="button" onClick={() => adjustGuests(1)} disabled={guests >= 16} aria-label="Increase guests">+</button>
++            </div>
++          </div>
++        )}
++      </div>
++
++      <button type="submit" className="search-btn" aria-label="Search">🔍</button>
++    </form>
++  );
++};
++
++export default SearchBar;
+diff --git a/admin-frontend/src/pages/LocationPage.js b/admin-frontend/src/pages/LocationPage.js
+index 5bc6d15..04f0b4a 100644
+--- a/admin-frontend/src/pages/LocationPage.js
++++ b/admin-frontend/src/pages/LocationPage.js
+@@ -1,31 +1,143 @@
+-import React, { useState, useEffect } from 'react';
+-import { useParams, useNavigate } from 'react-router-dom';
++import React, { useState, useEffect, useCallback } from 'react';
++import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+ import api from '../utils/api';
+ import LocationCard from '../components/LocationCard';
++
++const EMPTY_FILTERS = { minPrice: '', maxPrice: '', type: '', minRating: '', amenities: '' };
++
+ const LocationPage = () => {
+   const { location } = useParams();
+   const navigate = useNavigate();
++  const [searchParams] = useSearchParams();
+   const [accommodations, setAccommodations] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState('');
+   const [filterLocation, setFilterLocation] = useState(location || '');
+-  useEffect(() => { setFilterLocation(location || ''); fetchAccommodations(location); }, [location]);
+-  const fetchAccommodations = async (loc) => {
+-    try { setLoading(true); setError(''); const query = loc ? `?location=${encodeURIComponent(loc)}` : ''; const res = await api.get(`/accommodations${query}`); setAccommodations(res.data.data); }
+-    catch (err) { setError(err.response?.data?.message || 'Failed to load accommodations'); } finally { setLoading(false); }
++  const [filters, setFilters] = useState(EMPTY_FILTERS);
++
++  const checkIn = searchParams.get('checkIn') || '';
++  const checkOut = searchParams.get('checkOut') || '';
++  const guests = searchParams.get('guests') || '';
++
++  const fetchAccommodations = useCallback(async () => {
++    try {
++      setLoading(true);
++      setError('');
++      const params = {};
++      if (location) params.location = location;
++      if (guests) params.guests = guests;
++      if (filters.minPrice) params.minPrice = filters.minPrice;
++      if (filters.maxPrice) params.maxPrice = filters.maxPrice;
++      if (filters.type) params.type = filters.type;
++      if (filters.minRating) params.minRating = filters.minRating;
++      if (filters.amenities) params.amenities = filters.amenities;
++
++      const res = await api.get('/accommodations', { params });
++      setAccommodations(res.data.data);
++    } catch (err) {
++      setError(err.response?.data?.message || 'Failed to load accommodations');
++    } finally {
++      setLoading(false);
++    }
++  }, [location, guests, filters]);
++
++  useEffect(() => {
++    setFilterLocation(location || '');
++  }, [location]);
++
++  useEffect(() => {
++    fetchAccommodations();
++  }, [fetchAccommodations]);
++
++  const handleFilterSubmit = (e) => {
++    e.preventDefault();
++    if (filterLocation.trim()) navigate(`/locations/${encodeURIComponent(filterLocation.trim())}`);
+   };
+-  const handleFilterSubmit = (e) => { e.preventDefault(); if (filterLocation.trim()) navigate(`/locations/${encodeURIComponent(filterLocation.trim())}`); };
++
++  const handleFilterChange = (field, value) => {
++    setFilters((prev) => ({ ...prev, [field]: value }));
++  };
++
++  const handleClearFilters = () => setFilters(EMPTY_FILTERS);
++
++  const hasActiveFilters = Object.values(filters).some(Boolean);
++  const dateSummary = checkIn || checkOut ? `${checkIn || 'Any'} \u2192 ${checkOut || 'Any'}` : null;
++
+   return (
+     <div className="location-page">
+       <div className="location-header">
+-        <h1>{accommodations.length} stays in {location || 'all locations'}</h1>
+-        <form onSubmit={handleFilterSubmit} className="location-filter"><input type="text" value={filterLocation} onChange={(e)=>setFilterLocation(e.target.value)} placeholder="Filter by location..." /><button type="submit">Search</button></form>
++        <div>
++          <h1>{accommodations.length} stays in {location || 'all locations'}</h1>
++          {(dateSummary || guests) && (
++            <p className="location-search-summary">
++              {dateSummary && <span>{dateSummary}</span>}
++              {guests && <span>{guests} guests</span>}
++            </p>
++          )}
++        </div>
++        <form onSubmit={handleFilterSubmit} className="location-filter">
++          <input type="text" value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} placeholder="Filter by location..." />
++          <button type="submit">Search</button>
++        </form>
++      </div>
++
++      <div className="filters-bar">
++        <div className="filter-field">
++          <label htmlFor="minPrice">Min price</label>
++          <input id="minPrice" type="number" min="0" value={filters.minPrice} onChange={(e) => handleFilterChange('minPrice', e.target.value)} placeholder="R0" />
++        </div>
++        <div className="filter-field">
++          <label htmlFor="maxPrice">Max price</label>
++          <input id="maxPrice" type="number" min="0" value={filters.maxPrice} onChange={(e) => handleFilterChange('maxPrice', e.target.value)} placeholder="Any" />
++        </div>
++        <div className="filter-field">
++          <label htmlFor="type">Property type</label>
++          <select id="type" value={filters.type} onChange={(e) => handleFilterChange('type', e.target.value)}>
++            <option value="">Any type</option>
++            <option value="Entire place">Entire place</option>
++            <option value="Private room">Private room</option>
++          </select>
++        </div>
++        <div className="filter-field">
++          <label htmlFor="minRating">Min rating</label>
++          <select id="minRating" value={filters.minRating} onChange={(e) => handleFilterChange('minRating', e.target.value)}>
++            <option value="">Any rating</option>
++            <option value="4.5">4.5+</option>
++            <option value="4.7">4.7+</option>
++            <option value="4.9">4.9+</option>
++          </select>
++        </div>
++        <div className="filter-field">
++          <label htmlFor="amenities">Amenities</label>
++          <select id="amenities" value={filters.amenities} onChange={(e) => handleFilterChange('amenities', e.target.value)}>
++            <option value="">Any amenities</option>
++            <option value="wifi">Wifi</option>
++            <option value="pool">Pool</option>
++            <option value="free parking">Free parking</option>
++            <option value="kitchen">Kitchen</option>
++          </select>
++        </div>
++        {hasActiveFilters && (
++          <button type="button" className="clear-filters-btn" onClick={handleClearFilters}>Clear Filters</button>
++        )}
+       </div>
++
+       {loading && <div className="loading">Loading accommodations...</div>}
+       {error && <div className="error">{error}</div>}
+-      {!loading && !error && accommodations.length===0 && <div className="empty-state"><p>No accommodations found for "{location}".</p><button onClick={()=>navigate('/')}>Browse all locations</button></div>}
+-      {!loading && !error && accommodations.length>0 && <div className="locations-grid">{accommodations.map(acc => <LocationCard key={acc._id} accommodation={acc} />)}</div>}
++      {!loading && !error && accommodations.length === 0 && (
++        <div className="empty-state">
++          <p>No accommodations found{location ? ` for "${location}"` : ''}{hasActiveFilters ? ' matching your filters' : ''}.</p>
++          {hasActiveFilters && <button onClick={handleClearFilters}>Clear filters</button>}
++          <button onClick={() => navigate('/')}>Browse all locations</button>
++        </div>
++      )}
++      {!loading && !error && accommodations.length > 0 && (
++        <div className="locations-grid">
++          {accommodations.map((acc) => <LocationCard key={acc._id} accommodation={acc} />)}
++        </div>
++      )}
+     </div>
+   );
+ };
++
+ export default LocationPage;
+diff --git a/backend/controllers/accommodationController.js b/backend/controllers/accommodationController.js
+index 8cfa18e..203a2eb 100644
+--- a/backend/controllers/accommodationController.js
++++ b/backend/controllers/accommodationController.js
+@@ -10,14 +10,45 @@ const AppError = require('../utils/AppError');
+ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+ 
+ /**
+- * @desc    Get all accommodations with optional location filter
++ * @desc    Get all accommodations, optionally filtered by location, price
++ *          range, property type, minimum guest capacity, minimum rating,
++ *          and/or amenities
+  * @route   GET /api/accommodations
+  * @access  Public
+  */
+ const getAccommodations = async (req, res, next) => {
+   try {
+-    const { location } = req.query;
+-    const filter = location ? { location: new RegExp(escapeRegex(location), 'i') } : {};
++    const { location, minPrice, maxPrice, type, guests, minRating, amenities } = req.query;
++    const filter = {};
++
++    if (location) {
++      filter.location = new RegExp(escapeRegex(location), 'i');
++    }
++
++    if (minPrice || maxPrice) {
++      filter.price = {};
++      if (minPrice && !Number.isNaN(Number(minPrice))) filter.price.$gte = Number(minPrice);
++      if (maxPrice && !Number.isNaN(Number(maxPrice))) filter.price.$lte = Number(maxPrice);
++      if (Object.keys(filter.price).length === 0) delete filter.price;
++    }
++
++    if (type) {
++      filter.type = new RegExp(`^${escapeRegex(type)}$`, 'i');
++    }
++
++    if (guests && !Number.isNaN(Number(guests))) {
++      filter.guests = { $gte: Number(guests) };
++    }
++
++    if (minRating && !Number.isNaN(Number(minRating))) {
++      filter.rating = { $gte: Number(minRating) };
++    }
++
++    if (amenities) {
++      const requested = Array.isArray(amenities) ? amenities : amenities.split(',');
++      const cleaned = requested.map((a) => a.trim()).filter(Boolean);
++      if (cleaned.length > 0) filter.amenities = { $all: cleaned };
++    }
+ 
+     const accommodations = await Accommodation.find(filter).populate('host', 'username');
+ 
+diff --git a/backend/tests/accommodations.test.js b/backend/tests/accommodations.test.js
+index 89b941c..a3b923c 100644
+--- a/backend/tests/accommodations.test.js
++++ b/backend/tests/accommodations.test.js
+@@ -38,6 +38,42 @@ describe('GET /api/accommodations', () => {
+     const passedFilter = Accommodation.find.mock.calls[0][0];
+     expect(passedFilter.location.source).toBe('\\(unclosed');
+   });
++
++  it('applies price range, guest capacity, rating, type, and amenities filters together', async () => {
++    const populateMock = jest.fn().mockResolvedValue([]);
++    Accommodation.find.mockReturnValue({ populate: populateMock });
++
++    await request(app).get('/api/accommodations').query({
++      minPrice: '100',
++      maxPrice: '300',
++      guests: '4',
++      minRating: '4.5',
++      type: 'Entire place',
++      amenities: 'wifi,pool',
++    });
++
++    const passedFilter = Accommodation.find.mock.calls[0][0];
++    expect(passedFilter.price).toEqual({ $gte: 100, $lte: 300 });
++    expect(passedFilter.guests).toEqual({ $gte: 4 });
++    expect(passedFilter.rating).toEqual({ $gte: 4.5 });
++    expect(passedFilter.type.source).toBe('^Entire place$');
++    expect(passedFilter.amenities).toEqual({ $all: ['wifi', 'pool'] });
++  });
++
++  it('ignores non-numeric price/guests/rating query values instead of erroring', async () => {
++    const populateMock = jest.fn().mockResolvedValue([]);
++    Accommodation.find.mockReturnValue({ populate: populateMock });
++
++    const res = await request(app)
++      .get('/api/accommodations')
++      .query({ minPrice: 'not-a-number', guests: 'abc', minRating: 'nope' });
++
++    expect(res.status).toBe(200);
++    const passedFilter = Accommodation.find.mock.calls[0][0];
++    expect(passedFilter.price).toBeUndefined();
++    expect(passedFilter.guests).toBeUndefined();
++    expect(passedFilter.rating).toBeUndefined();
++  });
+ });
+ 
+ describe('GET /api/accommodations/:id', () => {
+diff --git a/backend/utils/defaultAccommodations.js b/backend/utils/defaultAccommodations.js
+index c8e5152..066096e 100644
+--- a/backend/utils/defaultAccommodations.js
++++ b/backend/utils/defaultAccommodations.js
+@@ -107,6 +107,69 @@ const DEFAULT_ACCOMMODATIONS = [
+   {
+     title: 'Bo-Kaap Courtyard Home', location: 'Cape Town', description: 'A colourful courtyard home close to city landmarks.', type: 'Entire place', guests: 5, bedrooms: 2, bathrooms: 2, price: 230, amenities: ['wifi', 'kitchen', 'patio'], images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80'], rating: 4.9, reviews: 33,
+   },
++  {
++    title: 'Camps Bay Modern Villa', location: 'Cape Town', description: 'A sleek villa with a private pool and Atlantic seaboard views.', type: 'Entire place', guests: 8, bedrooms: 4, bathrooms: 3, price: 410, amenities: ['wifi', 'pool', 'sea view', 'braai area', 'security'], images: ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80', 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80'], rating: 4.9, reviews: 41,
++  },
++  {
++    title: 'Waterfront Studio', location: 'Cape Town', description: 'A compact studio steps from the V&A Waterfront harbour walk.', type: 'Entire place', guests: 2, bedrooms: 1, bathrooms: 1, price: 140, amenities: ['wifi', 'kitchen', 'elevator', 'gym'], images: ['https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'], rating: 4.6, reviews: 17,
++  },
++  {
++    title: 'Sandton Luxury Apartment', location: 'Johannesburg', description: 'An upscale apartment in the financial district, walk to Sandton City.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 2, price: 260, amenities: ['wifi', 'kitchen', 'gym', 'security', 'backup power'], images: ['https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80'], rating: 4.7, reviews: 28,
++  },
++  {
++    title: 'Rosebank Creative Loft', location: 'Johannesburg', description: 'An artsy loft near Rosebank\u2019s galleries, markets, and rooftop bars.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 130, amenities: ['wifi', 'workspace', 'kitchen'], images: ['https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1200&q=80'], rating: 4.5, reviews: 13,
++  },
++  {
++    title: 'Melville Garden Cottage', location: 'Johannesburg', description: 'A leafy garden cottage on a quiet street near Melville\u2019s cafes.', type: 'Entire place', guests: 3, bedrooms: 1, bathrooms: 1, price: 150, amenities: ['wifi', 'garden', 'kitchen', 'free parking'], images: ['https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=1200&q=80'], rating: 4.8, reviews: 22,
++  },
++  {
++    title: 'Fourways Family Home', location: 'Johannesburg', description: 'A spacious family home with a garden and braai area near the mall.', type: 'Entire place', guests: 7, bedrooms: 3, bathrooms: 2, price: 290, amenities: ['wifi', 'kitchen', 'braai area', 'free parking', 'backup power'], images: ['https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80'], rating: 4.6, reviews: 19,
++  },
++  {
++    title: 'Umhlanga Beach Apartment', location: 'Durban', description: 'A breezy beachfront apartment steps from the promenade.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 1, price: 195, amenities: ['wifi', 'sea view', 'kitchen', 'pool'], images: ['https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'], rating: 4.8, reviews: 30,
++  },
++  {
++    title: 'Durban North Villa', location: 'Durban', description: 'A family villa with a garden, pool, and easy access to the beaches.', type: 'Entire place', guests: 6, bedrooms: 3, bathrooms: 2, price: 240, amenities: ['wifi', 'pool', 'garden', 'free parking'], images: ['https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=1200&q=80'], rating: 4.7, reviews: 21,
++  },
++  {
++    title: 'Golden Mile Studio', location: 'Durban', description: 'A budget-friendly studio close to the Golden Mile beachfront.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 95, amenities: ['wifi', 'air conditioning'], images: ['https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80'], rating: 4.3, reviews: 11,
++  },
++  {
++    title: 'Berea Heritage Apartment', location: 'Durban', description: 'A characterful apartment in a heritage building overlooking the city.', type: 'Entire place', guests: 3, bedrooms: 1, bathrooms: 1, price: 125, amenities: ['wifi', 'kitchen', 'workspace'], images: ['https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80'], rating: 4.5, reviews: 14,
++  },
++  {
++    title: 'Hatfield Student Loft', location: 'Pretoria', description: 'A modern loft near the university, embassies, and Hatfield Square.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 105, amenities: ['wifi', 'workspace', 'kitchen'], images: ['https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=1200&q=80'], rating: 4.4, reviews: 9,
++  },
++  {
++    title: 'Waterkloof Family Home', location: 'Pretoria', description: 'A quiet, jacaranda-lined family home with a private garden.', type: 'Entire place', guests: 6, bedrooms: 3, bathrooms: 2, price: 225, amenities: ['wifi', 'garden', 'kitchen', 'free parking', 'braai area'], images: ['https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'], rating: 4.7, reviews: 18,
++  },
++  {
++    title: 'Menlyn Modern Apartment', location: 'Pretoria', description: 'A stylish apartment near Menlyn Park and the Gautrain.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 2, price: 180, amenities: ['wifi', 'kitchen', 'gym', 'security'], images: ['https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80'], rating: 4.6, reviews: 15,
++  },
++  {
++    title: 'Vilakazi Street Heritage Home', location: 'Soweto', description: 'A welcoming home on the historic street once home to two Nobel laureates.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 1, price: 110, amenities: ['wifi', 'kitchen', 'braai area'], images: ['https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80'], rating: 4.8, reviews: 25,
++  },
++  {
++    title: 'Orlando Towers View Loft', location: 'Soweto', description: 'A bright loft with a view of the iconic Orlando Towers.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 85, amenities: ['wifi', 'kitchen'], images: ['https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=1200&q=80'], rating: 4.5, reviews: 12,
++  },
++  {
++    title: 'Shoreditch Warehouse Loft', location: 'London', description: 'An industrial-chic loft in the heart of East London\u2019s creative scene.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 1, price: 265, amenities: ['wifi', 'kitchen', 'workspace', 'heating'], images: ['https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=1200&q=80'], rating: 4.7, reviews: 24,
++  },
++  {
++    title: 'Notting Hill Townhouse', location: 'London', description: 'A classic townhouse near the colourful streets and Portobello Market.', type: 'Entire place', guests: 5, bedrooms: 3, bathrooms: 2, price: 340, amenities: ['wifi', 'kitchen', 'garden', 'heating'], images: ['https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80'], rating: 4.9, reviews: 37,
++  },
++  {
++    title: 'Camden Canalside Studio', location: 'London', description: 'A cosy canalside studio near Camden Market and the lock.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 150, amenities: ['wifi', 'heating'], images: ['https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80'], rating: 4.4, reviews: 16,
++  },
++  {
++    title: 'Downtown Dubai Sky Suite', location: 'Dubai', description: 'A high-rise suite with Burj Khalifa views and hotel-style amenities.', type: 'Entire place', guests: 4, bedrooms: 2, bathrooms: 2, price: 380, amenities: ['wifi', 'pool', 'gym', 'air conditioning', 'security'], images: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80'], rating: 4.8, reviews: 34,
++  },
++  {
++    title: 'Jumeirah Beach Apartment', location: 'Dubai', description: 'A beachfront apartment with direct access to the sand and sea.', type: 'Entire place', guests: 6, bedrooms: 3, bathrooms: 2, price: 420, amenities: ['wifi', 'pool', 'sea view', 'air conditioning'], images: ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80'], rating: 4.9, reviews: 39,
++  },
++  {
++    title: 'Al Fahidi Heritage Room', location: 'Dubai', description: 'A quiet room in the historic Al Fahidi district, near the creek and museums.', type: 'Private room', guests: 2, bedrooms: 1, bathrooms: 1, price: 90, amenities: ['wifi', 'air conditioning'], images: ['https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80'], rating: 4.5, reviews: 10,
++  },
+ ];
+ 
+ const ensureDefaultAccommodations = async (hostId) => {
+-- 
+2.43.0
+
