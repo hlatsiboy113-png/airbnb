@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
-  const { user, login, logout, isHost } = useAuth();
+const { user, login, isAuthenticated, isHost, isAdmin, isGuest, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -12,6 +12,7 @@ const Header = () => {
   const [loginLoading, setLoginLoading] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -34,14 +35,33 @@ const Header = () => {
     setLoginError('');
     setLoginLoading(true);
     try {
-      await login(loginForm.email, loginForm.password);
+      const loggedInUser = await login(loginForm.email, loginForm.password);
       setLoginModalOpen(false);
       setLoginForm({ email: '', password: '' });
+      // Role-based redirect
+      if (loggedInUser.role === 'admin') navigate('/admin/dashboard');
+      else if (loggedInUser.role === 'host') navigate('/host/dashboard');
+      else navigate('/');
     } catch (err) {
       setLoginError(err.response?.data?.message || 'Login failed');
     } finally {
       setLoginLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setDropdownOpen(false);
+    navigate('/');
+  };
+
+  // Don't show public header on login/register pages
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  const getRoleLabel = () => {
+    if (isAdmin) return 'Administrator';
+    if (isHost) return 'Host';
+    return 'Guest';
   };
 
   return (
@@ -60,25 +80,47 @@ const Header = () => {
           </form>
         </div>
         <div className="header-right" ref={dropdownRef}>
-          {user ? (
+          {isAuthenticated ? (
             <div className="profile-section">
-              <span className="greeting">{user.role === 'admin' ? 'Admin' : user.role === 'host' ? 'Host' : 'Guest'} · {user.username}</span>
+              <span className="greeting role-greeting">{getRoleLabel()} · {user?.username}</span>
               <button className="profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>☰ 👤</button>
               {dropdownOpen && (
                 <div className="dropdown-menu">
-                  {user.role === 'admin' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>Admin Dashboard</div>}
-                  {user.role === 'host' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>Host Dashboard</div>}
-                  {user.role === 'host' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/create'); }}>Create Listing</div>}
-                  <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate(isHost ? '/admin/reservations' : '/reservations'); }}>{user.role === 'admin' ? 'Admin Reservations' : user.role === 'host' ? 'Host Reservations' : 'My Reservations'}</div>
-                  <div className="dropdown-item logout" onClick={() => { logout(); setDropdownOpen(false); }}>Log Out</div>
+                  {isGuest && (
+                    <>
+                      <Link to="/" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Explore</Link>
+                      <Link to="/my-reservations" className="dropdown-item" onClick={() => setDropdownOpen(false)}>My Reservations</Link>
+                      <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/host/dashboard'); }}>Become a Host</div>
+                    </>
+                  )}
+                  {isHost && !isAdmin && (
+                    <>
+                      <Link to="/host/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Host Dashboard</Link>
+                      <Link to="/host/listings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>My Listings</Link>
+                      <Link to="/host/create" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Create Listing</Link>
+                      <Link to="/host/reservations" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Host Reservations</Link>
+                    </>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <Link to="/admin/dashboard" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Admin Dashboard</Link>
+                      <Link to="/admin/listings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Manage Listings</Link>
+                      <Link to="/admin/users" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Manage Users</Link>
+                      <Link to="/admin/reservations" className="dropdown-item" onClick={() => setDropdownOpen(false)}>Reservations</Link>
+                    </>
+                  )}
+                  <div className="dropdown-item logout" onClick={handleLogout}>Log Out</div>
                 </div>
               )}
             </div>
           ) : (
             <div className="auth-section">
-              <button type="button" className="become-host" onClick={() => navigate('/admin/login')}>Become a host</button>
-              <Link to="/register" className="become-host">Sign Up</Link>
-              <button className="profile-btn" onClick={() => setLoginModalOpen(true)}>☰ 👤</button>
+              {!isAuthPage && (
+                <>
+                  <span className="become-host" onClick={() => navigate('/register')}>Become a host</span>
+                  <button className="profile-btn" onClick={() => navigate('/login')}>☰ 👤</button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -93,7 +135,7 @@ const Header = () => {
               <div className="form-group"><input type="password" placeholder="Password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} required /></div>
               <button type="submit" className="submit-btn" disabled={loginLoading}>{loginLoading ? 'Logging in...' : 'Log In'}</button>
             </form>
-            <button type="button" className="dropdown-item" onClick={() => { setLoginModalOpen(false); navigate('/register'); }}>Create an account</button>
+            <p className="test-creds">Test: john@example.com / password123</p>
           </div>
         </div>
       )}
