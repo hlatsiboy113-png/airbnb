@@ -13,11 +13,25 @@ if (process.env.NODE_ENV !== 'production') {
 
 const app = require('./app');
 const connectDB = require('./config/db');
+const User = require('./models/User');
+const { ensureDefaultUsers } = require('./controllers/userController');
+const { ensureDefaultAccommodations } = require('./utils/defaultAccommodations');
 
-// Connect to MongoDB
-connectDB();
+const startServer = async () => {
+  await connectDB();
+  await ensureDefaultUsers();
+  if (process.env.NODE_ENV !== 'production') {
+    const host = await User.findOne({ email: 'jane@example.com' });
+    if (host) await ensureDefaultAccommodations(host._id);
+  }
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error.message);
+  process.exit(1);
 });
