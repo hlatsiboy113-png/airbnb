@@ -1,52 +1,90 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../utils/api';
 
 const RegisterPage = () => {
-  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' });
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.username.trim()) newErrors.username = 'Name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    setApiError('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
+    setApiError('');
     try {
-      await register(form.username, form.email, form.password);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      await api.post('/users/register', formData);
+      navigate('/login');
+    } catch (error) {
+      setApiError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={pageStyle}>
-      <div style={cardStyle} className="card">
-        <h1>Create account</h1>
-        <p>Join the Airbnb community.</p>
-        {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group"><label htmlFor="username">Name</label><input id="username" required minLength="2" value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} /></div>
-          <div className="form-group"><label htmlFor="email">Email</label><input id="email" type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></div>
-          <div className="form-group"><label htmlFor="password">Password</label><input id="password" type="password" required minLength="6" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></div>
-          <div className="form-group"><label htmlFor="confirmPassword">Confirm password</label><input id="confirmPassword" type="password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</button>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">Create your account</h1>
+        <p className="auth-subtitle">Join Airbnb to start exploring or hosting</p>
+
+        {apiError && <div className="alert alert-error">{apiError}</div>}
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label>Full Name</label>
+            <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Your full name" className={errors.username ? 'error-border' : ''} />
+            {errors.username && <span className="error">{errors.username}</span>}
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
+            {errors.email && <span className="error">{errors.email}</span>}
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Create a password" className={errors.password ? 'error-border' : ''} />
+            {errors.password && <span className="error">{errors.password}</span>}
+          </div>
+          <div className="form-group">
+            <label>Account Type</label>
+            <select name="role" value={formData.role} onChange={handleChange} className="role-select">
+              <option value="user">Guest / Tenant — Find and book places to stay</option>
+              <option value="host">Host — List and manage your properties</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
+            {loading ? 'Creating account...' : 'Sign Up'}
+          </button>
         </form>
-        <button type="button" className="btn btn-secondary" onClick={() => navigate('/')} style={{ marginTop: '12px' }}>Back to home</button>
+
+        <div className="auth-footer">
+          <p>Already have an account? <Link to="/login">Sign In</Link></p>
+          <p className="host-prompt">Want to list your property? Select <strong>Host</strong> above.</p>
+        </div>
       </div>
     </div>
   );
 };
-
-const pageStyle = { minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' };
-const cardStyle = { width: '100%', maxWidth: '460px', padding: '32px' };
 
 export default RegisterPage;
