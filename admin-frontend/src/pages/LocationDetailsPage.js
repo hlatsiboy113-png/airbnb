@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import api, { BACKEND_URL } from '../utils/api';
+import api, { getImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const LocationDetailsPage = () => {
@@ -18,6 +18,7 @@ const LocationDetailsPage = () => {
   const [guests, setGuests] = useState(1);
   const [reserving, setReserving] = useState(false);
   const [reserveMsg, setReserveMsg] = useState('');
+  const [activeImage, setActiveImage] = useState(null);
 
   useEffect(() => {
     fetchAccommodation();
@@ -64,10 +65,25 @@ const LocationDetailsPage = () => {
       setReserveMsg('Please log in to make a reservation.');
       return;
     }
-    if (nights <= 0) {
+
+    const guestCount = Number(guests);
+    const maxGuests = Number(acc?.guests || 1);
+
+    if (!checkIn || !checkOut) {
+      setReserveMsg('Please select both check-in and check-out dates.');
+      return;
+    }
+
+    if (new Date(checkOut) <= new Date(checkIn)) {
       setReserveMsg('Check-out must be after check-in.');
       return;
     }
+
+    if (guestCount < 1 || guestCount > maxGuests) {
+      setReserveMsg(`Please select between 1 and ${maxGuests} guests.`);
+      return;
+    }
+
     setReserving(true);
     setReserveMsg('');
     try {
@@ -75,7 +91,7 @@ const LocationDetailsPage = () => {
         accommodation: id,
         checkIn,
         checkOut,
-        guests: Number(guests),
+        guests: guestCount,
         totalCost,
       });
       setReserveMsg('Reservation confirmed! 🎉');
@@ -91,8 +107,9 @@ const LocationDetailsPage = () => {
   if (!acc) return <div className="error">Accommodation not found</div>;
 
   const images = acc.images || [];
-  const mainImage = images[0] ? `${BACKEND_URL}/uploads/${images[0]}` : null;
-  const galleryImages = images.slice(1, 5).map((img) => `${BACKEND_URL}/uploads/${img}`);
+  const mainImage = images[0] ? getImageUrl(images[0]) : null;
+  const galleryImages = images.slice(1, 5).map(getImageUrl);
+  const allImages = [mainImage, ...galleryImages].filter(Boolean);
 
   return (
     <div className="details-page">
@@ -111,17 +128,26 @@ const LocationDetailsPage = () => {
       {/* Image Gallery */}
       <div className="image-gallery">
         <div className="gallery-main">
-          {mainImage ? <img src={mainImage} alt={acc.title} /> : <div className="no-image">No Image</div>}
+          {mainImage ? <img src={mainImage} alt={acc.title} onClick={() => setActiveImage(0)} /> : <div className="no-image">No Image</div>}
         </div>
         <div className="gallery-grid">
           {galleryImages.map((src, i) => (
-            <div key={i} className="gallery-thumb"><img src={src} alt={`${acc.title} ${i + 2}`} /></div>
+            <div key={i} className="gallery-thumb"><img src={src} alt={`${acc.title} ${i + 2}`} onClick={() => setActiveImage(i + 1)} /></div>
           ))}
           {galleryImages.length < 4 && Array.from({ length: 4 - galleryImages.length }).map((_, i) => (
             <div key={`empty-${i}`} className="gallery-thumb empty"><span>No Image</span></div>
           ))}
         </div>
       </div>
+
+      {activeImage !== null && (
+        <div className="gallery-lightbox" role="dialog" aria-label="Image gallery" onClick={() => setActiveImage(null)}>
+          <button type="button" className="gallery-close" aria-label="Close gallery" onClick={() => setActiveImage(null)}>×</button>
+          <button type="button" className="gallery-prev" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); setActiveImage((activeImage - 1 + allImages.length) % allImages.length); }}>‹</button>
+          <img src={allImages[activeImage]} alt={`${acc.title} ${activeImage + 1}`} onClick={(event) => event.stopPropagation()} />
+          <button type="button" className="gallery-next" aria-label="Next image" onClick={(event) => { event.stopPropagation(); setActiveImage((activeImage + 1) % allImages.length); }}>›</button>
+        </div>
+      )}
 
       {/* Two Column Layout */}
       <div className="details-body">

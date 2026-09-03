@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BACKEND_URL } from '../services/api';
+import { getImageUrl } from '../services/api';
 
 /**
  * Reusable ListingForm Component
@@ -30,7 +30,7 @@ const ListingForm = ({ initialData = null, onSubmit, isUpdate = false, loading =
 
   const [images, setImages] = useState([]);
   const [previewUrls, setPreviewUrls] = useState(
-    initialData?.images?.map((img) => `${BACKEND_URL}/uploads/${img}`) || []
+    initialData?.images?.map(getImageUrl) || []
   );
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);

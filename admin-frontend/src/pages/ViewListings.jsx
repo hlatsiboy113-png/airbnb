@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { BACKEND_URL } from '../services/api';
+import api, { getImageUrl } from '../services/api';
 
 /**
  * View Listings Page
@@ -118,15 +118,11 @@ const ViewListings = () => {
               {listings.map((listing) => (
                 <tr key={listing._id} style={trStyle}>
                   <td style={tdStyle}>
-                    <img
-                      src={
-                        listing.images?.[0]
-                          ? `${BACKEND_URL}/uploads/${listing.images[0]}`
-                          : 'https://via.placeholder.com/80x60?text=No+Image'
-                      }
-                      alt={listing.title}
-                      style={thumbnailStyle}
-                    />
+                    {listing.images?.[0] ? (
+                      <img src={getImageUrl(listing.images[0])} alt={listing.title} style={thumbnailStyle} />
+                    ) : (
+                      <div style={thumbnailStyle}>No Image</div>
+                    )}
                   </td>
                   <td style={tdStyle}>
                     <div style={titleCellStyle}>{listing.title}</div>
