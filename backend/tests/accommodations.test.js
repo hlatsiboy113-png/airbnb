@@ -38,6 +38,42 @@ describe('GET /api/accommodations', () => {
     const passedFilter = Accommodation.find.mock.calls[0][0];
     expect(passedFilter.location.source).toBe('\\(unclosed');
   });
+
+  it('applies price range, guest capacity, rating, type, and amenities filters together', async () => {
+    const populateMock = jest.fn().mockResolvedValue([]);
+    Accommodation.find.mockReturnValue({ populate: populateMock });
+
+    await request(app).get('/api/accommodations').query({
+      minPrice: '100',
+      maxPrice: '300',
+      guests: '4',
+      minRating: '4.5',
+      type: 'Entire place',
+      amenities: 'wifi,pool',
+    });
+
+    const passedFilter = Accommodation.find.mock.calls[0][0];
+    expect(passedFilter.price).toEqual({ $gte: 100, $lte: 300 });
+    expect(passedFilter.guests).toEqual({ $gte: 4 });
+    expect(passedFilter.rating).toEqual({ $gte: 4.5 });
+    expect(passedFilter.type.source).toBe('^Entire place$');
+    expect(passedFilter.amenities).toEqual({ $all: ['wifi', 'pool'] });
+  });
+
+  it('ignores non-numeric price/guests/rating query values instead of erroring', async () => {
+    const populateMock = jest.fn().mockResolvedValue([]);
+    Accommodation.find.mockReturnValue({ populate: populateMock });
+
+    const res = await request(app)
+      .get('/api/accommodations')
+      .query({ minPrice: 'not-a-number', guests: 'abc', minRating: 'nope' });
+
+    expect(res.status).toBe(200);
+    const passedFilter = Accommodation.find.mock.calls[0][0];
+    expect(passedFilter.price).toBeUndefined();
+    expect(passedFilter.guests).toBeUndefined();
+    expect(passedFilter.rating).toBeUndefined();
+  });
 });
 
 describe('GET /api/accommodations/:id', () => {

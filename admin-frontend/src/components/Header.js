@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SearchBar from './SearchBar';
 
 const Header = () => {
 const { user, login, isAuthenticated, isHost, isAdmin, isGuest, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, login, logout, isHost } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
@@ -21,14 +23,6 @@ const { user, login, isAuthenticated, isHost, isAdmin, isGuest, logout } = useAu
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/locations/${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -74,10 +68,7 @@ const { user, login, isAuthenticated, isHost, isAdmin, isGuest, logout } = useAu
           </Link>
         </div>
         <div className="header-center">
-          <form onSubmit={handleSearch} className="search-bar">
-            <input type="text" placeholder="Search destinations" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            <button type="submit" className="search-btn">🔍</button>
-          </form>
+          <SearchBar />
         </div>
         <div className="header-right" ref={dropdownRef}>
           {isAuthenticated ? (
