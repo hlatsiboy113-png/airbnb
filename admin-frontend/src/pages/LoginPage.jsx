@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * Admin Login Page
- * Validates inputs, authenticates via API, stores JWT token
- */
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
@@ -14,138 +10,89 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  /**
-   * Validate form fields before submission
-   * @returns {boolean} True if valid
-   */
   const validate = () => {
     const newErrors = {};
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handle input changes
-   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     setApiError('');
   };
 
-  /**
-   * Handle form submission
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
     setLoading(true);
     setApiError('');
-
     try {
-      const authenticatedUser = await login(formData.email, formData.password);
-      navigate(authenticatedUser.role === 'user' ? '/' : '/admin/dashboard');
+      const user = await login(formData.email, formData.password);
+      if (user.role === 'admin') navigate('/admin/dashboard');
+      else if (user.role === 'host') navigate('/host/dashboard');
+      else navigate('/');
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed. Please try again.';
-      setApiError(message);
+      setApiError(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={pageStyle}>
-      <div style={cardStyle} className="card">
-        <h2 style={titleStyle}>Admin Login</h2>
-        <p style={subtitleStyle}>Sign in to manage your listings</p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">WELCOME BACK</h1>
+        <div className="role-info">
+          <div className="role-block">
+            <strong>Guest / Tenant</strong>
+            <span>Find and book places to stay</span>
+          </div>
+          <div className="role-block">
+            <strong>Host</strong>
+            <span>List and manage your properties</span>
+          </div>
+          <div className="role-block">
+            <strong>Administrator</strong>
+            <span>Manage the Airbnb platform</span>
+          </div>
+        </div>
 
         {apiError && <div className="alert alert-error">{apiError}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className={errors.email ? 'error-border' : ''}
-            />
+            <label>Email</label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
             {errors.email && <span className="error">{errors.email}</span>}
           </div>
-
           <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              className={errors.password ? 'error-border' : ''}
-            />
+            <label>Password</label>
+            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" className={errors.password ? 'error-border' : ''} />
             {errors.password && <span className="error">{errors.password}</span>}
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '8px' }}
-            disabled={loading}
-          >
+          <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
+        <div className="auth-footer">
+          <p>Don't have an account? <Link to="/register">Sign Up</Link></p>
+          <div className="test-credentials">
+            <p><strong>Test Credentials:</strong></p>
+            <p>Guest: john@example.com / password123</p>
+            <p>Host: jane@example.com / password321</p>
+            <p>Admin: admin@example.com / admin123</p>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-const pageStyle = {
-  minHeight: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px',
-  background: 'linear-gradient(135deg, #ff385c 0%, #d70466 100%)',
-};
-
-const cardStyle = {
-  width: '100%',
-  maxWidth: '420px',
-  padding: '40px',
-};
-
-const titleStyle = {
-  fontSize: '26px',
-  fontWeight: 700,
-  marginBottom: '8px',
-  color: '#222',
-};
-
-const subtitleStyle = {
-  fontSize: '14px',
-  color: '#717171',
-  marginBottom: '24px',
 };
 
 export default LoginPage;
