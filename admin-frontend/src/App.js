@@ -10,6 +10,9 @@ import LoginPage from './pages/LoginPage';
 import ViewListings from './pages/ViewListings';
 import CreateListing from './pages/CreateListing';
 import UpdateListing from './pages/UpdateListing';
+import ReservationsPage from './pages/ReservationsPage';
+import RegisterPage from './pages/RegisterPage';
+import UserReservationsPage from './pages/UserReservationsPage';
 
 function App() {
   return (
@@ -19,8 +22,18 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/locations/:location" element={<LocationPage />} />
+          <Route path="/explore" element={<LocationPage />} />
           <Route path="/listing/:id" element={<LocationDetailsPage />} />
           <Route path="/admin/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/reservations"
+            element={
+              <ProtectedRoute>
+                <UserReservationsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/dashboard"
             element={
@@ -42,6 +55,14 @@ function App() {
             element={
               <ProtectedRoute requireHost>
                 <UpdateListing />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reservations"
+            element={
+              <ProtectedRoute requireHost>
+                <ReservationsPage />
               </ProtectedRoute>
             }
           />

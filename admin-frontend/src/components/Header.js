@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, isHost } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -62,18 +62,22 @@ const Header = () => {
         <div className="header-right" ref={dropdownRef}>
           {user ? (
             <div className="profile-section">
-              <span className="greeting">Hello, {user.username}</span>
+              <span className="greeting">{user.role === 'admin' ? 'Admin' : user.role === 'host' ? 'Host' : 'Guest'} · {user.username}</span>
               <button className="profile-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>☰ 👤</button>
               {dropdownOpen && (
                 <div className="dropdown-menu">
-                  <div className="dropdown-item">View Reservations</div>
+                  {user.role === 'admin' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>Admin Dashboard</div>}
+                  {user.role === 'host' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/dashboard'); }}>Host Dashboard</div>}
+                  {user.role === 'host' && <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate('/admin/create'); }}>Create Listing</div>}
+                  <div className="dropdown-item" onClick={() => { setDropdownOpen(false); navigate(isHost ? '/admin/reservations' : '/reservations'); }}>{user.role === 'admin' ? 'Admin Reservations' : user.role === 'host' ? 'Host Reservations' : 'My Reservations'}</div>
                   <div className="dropdown-item logout" onClick={() => { logout(); setDropdownOpen(false); }}>Log Out</div>
                 </div>
               )}
             </div>
           ) : (
             <div className="auth-section">
-              <span className="become-host">Become a host</span>
+              <button type="button" className="become-host" onClick={() => navigate('/admin/login')}>Become a host</button>
+              <Link to="/register" className="become-host">Sign Up</Link>
               <button className="profile-btn" onClick={() => setLoginModalOpen(true)}>☰ 👤</button>
             </div>
           )}
@@ -89,7 +93,7 @@ const Header = () => {
               <div className="form-group"><input type="password" placeholder="Password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} required /></div>
               <button type="submit" className="submit-btn" disabled={loginLoading}>{loginLoading ? 'Logging in...' : 'Log In'}</button>
             </form>
-            <p className="test-creds">Test: john@example.com / password123</p>
+            <button type="button" className="dropdown-item" onClick={() => { setLoginModalOpen(false); navigate('/register'); }}>Create an account</button>
           </div>
         </div>
       )}
