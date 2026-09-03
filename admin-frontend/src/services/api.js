@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
+export const getImageUrl = (image) => (
+  image?.startsWith('http') ? image : `${BACKEND_URL}/uploads/${image}`
+);
 
 /**
  * Axios instance with base URL and auth interceptor
@@ -14,23 +17,12 @@ const api = axios.create({
   },
 });
 
-/**
- * Request interceptor - attach JWT token to every request
- */
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-/**
- * Response interceptor - handle common errors globally
- */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
