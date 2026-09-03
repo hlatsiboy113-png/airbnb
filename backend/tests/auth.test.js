@@ -63,6 +63,43 @@ describe('POST /api/users/login', () => {
   });
 });
 
+describe('POST /api/users/register', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('rejects incomplete registration data (400)', async () => {
+    const res = await request(app).post('/api/users/register').send({ email: 'new@example.com' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a duplicate email (409)', async () => {
+    User.findOne.mockResolvedValue({ email: 'existing@example.com' });
+    const res = await request(app).post('/api/users/register').send({
+      username: 'Existing User',
+      email: 'existing@example.com',
+      password: 'password123',
+    });
+    expect(res.status).toBe(409);
+  });
+
+  it('creates a tenant and returns a usable JWT (201)', async () => {
+    User.findOne.mockResolvedValue(null);
+    User.create.mockResolvedValue({
+      _id: 'new-user',
+      username: 'New User',
+      email: 'new@example.com',
+      role: 'user',
+    });
+    const res = await request(app).post('/api/users/register').send({
+      username: 'New User',
+      email: 'new@example.com',
+      password: 'password123',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.user.role).toBe('user');
+    expect(jwt.verify(res.body.token, process.env.JWT_SECRET).userId).toBe('new-user');
+  });
+});
+
 describe('GET /api/users/me', () => {
   afterEach(() => jest.clearAllMocks());
 
