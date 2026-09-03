@@ -58,8 +58,8 @@ const LoginPage = () => {
     setApiError('');
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/admin/dashboard');
+      const authenticatedUser = await login(formData.email, formData.password);
+      navigate(authenticatedUser.role === 'user' ? '/' : '/admin/dashboard');
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       setApiError(message);
@@ -115,13 +115,6 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div style={testCredentialsStyle}>
-          <p style={{ fontSize: '12px', color: '#717171', marginTop: '16px' }}>
-            <strong>Test Credentials:</strong><br />
-            Host: jane@example.com / password321<br />
-            Admin: admin@example.com / admin123
-          </p>
-        </div>
       </div>
     </div>
   );
@@ -153,10 +146,6 @@ const subtitleStyle = {
   fontSize: '14px',
   color: '#717171',
   marginBottom: '24px',
-};
-
-const testCredentialsStyle = {
-  textAlign: 'center',
 };
 
 export default LoginPage;

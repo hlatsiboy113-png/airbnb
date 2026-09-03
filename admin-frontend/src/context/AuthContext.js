@@ -8,7 +8,8 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) { api.defaults.headers.common['Authorization'] = `Bearer ${token}`; fetchUser(); }
     else setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
+    // The auth bootstrap intentionally runs once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const fetchUser = async () => {
     try { const res = await api.get('/users/me'); setUser(res.data.data); }
@@ -21,9 +22,18 @@ export const AuthProvider = ({ children }) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(user); return user;
   };
+  const register = async (username, email, password) => {
+    const res = await api.post('/users/register', { username, email, password });
+    const { token, user: registeredUser } = res.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(registeredUser));
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setUser(registeredUser);
+    return registeredUser;
+  };
   const logout = () => { localStorage.removeItem('token'); delete api.defaults.headers.common['Authorization']; setUser(null); };
   const isAuthenticated = !!user;
   const isHost = user?.role === 'host' || user?.role === 'admin';
-  return <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated, isHost }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, register, logout, loading, isAuthenticated, isHost }}>{children}</AuthContext.Provider>;
 };
 export const useAuth = () => useContext(AuthContext);
