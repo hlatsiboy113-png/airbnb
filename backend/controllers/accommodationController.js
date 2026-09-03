@@ -65,6 +65,10 @@ const createAccommodation = async (req, res, next) => {
       host: req.user._id,
     };
 
+    if (typeof accommodationData.amenities === 'string') {
+      accommodationData.amenities = JSON.parse(accommodationData.amenities);
+    }
+
     if (req.files && req.files.length > 0) {
       accommodationData.images = req.files.map((file) => file.filename);
     }
@@ -101,6 +105,9 @@ const updateAccommodation = async (req, res, next) => {
     }
 
     const updateData = { ...req.body };
+    if (typeof updateData.amenities === 'string') {
+      updateData.amenities = JSON.parse(updateData.amenities);
+    }
     if (req.files && req.files.length > 0) {
       updateData.images = req.files.map((file) => file.filename);
     }
