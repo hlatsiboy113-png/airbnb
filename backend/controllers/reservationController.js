@@ -74,13 +74,29 @@ const updateReservation = async (req, res, next) => {
     const checkIn = req.body.checkIn || reservation.checkIn;
     const checkOut = req.body.checkOut || reservation.checkOut;
     const guests = Number(req.body.guests || reservation.guests);
-    if (new Date(checkIn) <= new Date()) {
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime())) {
+      return next(new AppError('Please provide valid check-in and check-out dates', 400));
+    }
+    if (checkInDate <= new Date()) {
       return next(new AppError('Reservations can only be changed before check-in', 400));
     }
-    const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000);
+    const nights = Math.ceil((checkOutDate - checkInDate) / 86400000);
     if (nights <= 0) return next(new AppError('Check-out must be after check-in', 400));
     if (guests < 1 || guests > reservation.accommodation.guests) {
       return next(new AppError(`This accommodation only accommodates up to ${reservation.accommodation.guests} guests`, 400));
+    }
+
+    const overlapping = await Reservation.findOne({
+      _id: { $ne: reservation._id },
+      accommodation: reservation.accommodation._id,
+      status: { $ne: 'cancelled' },
+      checkIn: { $lt: checkOutDate },
+      checkOut: { $gt: checkInDate },
+    });
+    if (overlapping) {
+      return next(new AppError('Accommodation is already booked for the selected dates.', 400));
     }
 
     reservation.checkIn = checkIn;

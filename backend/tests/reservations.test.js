@@ -336,6 +336,27 @@ describe('PUT /api/reservations/:id', () => {
 
     expect(res.status).toBe(400);
   });
+
+  it('rejects an update that overlaps another reservation (400)', async () => {
+    User.findById.mockResolvedValue({ _id: 'guest1', role: 'user' });
+    Reservation.findById.mockReturnValue({
+      populate: jest.fn().mockResolvedValue({
+        _id: 'r1',
+        user: { toString: () => 'guest1' },
+        checkIn: new Date('2026-12-01'),
+        accommodation: { _id: 'acc1', price: 100, guests: 4 },
+      }),
+    });
+    Reservation.findOne.mockResolvedValue({ _id: 'r2' });
+
+    const res = await request(app)
+      .put('/api/reservations/r1')
+      .set('Authorization', authHeaderFor('guest1'))
+      .send({ checkIn: '2026-12-05', checkOut: '2026-12-08', guests: 2 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/already booked/i);
+  });
 });
 
 
