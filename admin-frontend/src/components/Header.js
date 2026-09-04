@@ -5,8 +5,6 @@ import SearchBar from './SearchBar';
 
 const Header = () => {
 const { user, login, isAuthenticated, isHost, isAdmin, isGuest, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const { user, login, logout, isHost } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });

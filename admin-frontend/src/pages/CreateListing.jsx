@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import ListingForm from '../components/ListingForm';
 
@@ -12,6 +13,7 @@ const CreateListing = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   /**
    * Submit new listing to API
@@ -27,7 +29,8 @@ const CreateListing = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSuccess('Listing created successfully!');
-      setTimeout(() => navigate('/admin/dashboard'), 1500);
+      const workspaceBase = user?.role === 'admin' ? '/admin' : '/host';
+      setTimeout(() => navigate(`${workspaceBase}/dashboard`), 1500);
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to create listing';
       const errors = err.response?.data?.errors;

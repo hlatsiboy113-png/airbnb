@@ -1,6 +1,12 @@
 const dotenv = require('dotenv');
 dotenv.config();
 
+const requiredEnvironment = ['MONGO_URI', 'JWT_SECRET'];
+const missingEnvironment = requiredEnvironment.filter((name) => !process.env[name]);
+if (missingEnvironment.length) {
+  throw new Error(`Missing required environment variables: ${missingEnvironment.join(', ')}`);
+}
+
 // Workaround for environments where the default resolver can't handle
 // mongodb+srv DNS lookups (seen in some local/sandboxed dev setups).
 // Scoped to non-production so it never overrides a working resolver on

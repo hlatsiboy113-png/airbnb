@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import api, { BACKEND_URL } from '../services/api';
+import { useEffect, useState } from 'react';
+import api from '../services/api';
+
+const money = (value) => `R${Number(value || 0).toLocaleString('en-ZA')}`;
 
 const AllReservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -9,28 +11,26 @@ const AllReservations = () => {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      // Fetch all accommodations then aggregate reservations, or use a dedicated endpoint
-      // Since there's no dedicated /all endpoint, we'll fetch host reservations for all hosts
-      // For now, this is a placeholder that shows a message. In a real app, add GET /api/reservations (admin)
-      setReservations([]);
+      setError('');
+      const response = await api.get('/reservations');
+      setReservations(response.data.data || []);
     } catch (err) {
-      setError('Failed to load reservations.');
+      setError(err.response?.data?.message || 'We could not load reservations. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
+
+  if (loading) return <section className="workspace-shell"><div className="workspace-skeleton" role="status">Loading reservations…</div></section>;
 
   return (
-    <div className="container" style={{ padding: '40px 24px' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '24px' }}>All Reservations</h1>
-      <div className="alert alert-info">
-        Admin reservation overview. To fully implement, add a <code>GET /api/reservations</code> endpoint (admin-only) to the backend.
-      </div>
-    </div>
+    <section className="workspace-shell">
+      <div className="workspace-heading"><div><p className="workspace-eyebrow">Marketplace activity</p><h1>All reservations</h1><p className="workspace-subtitle">A complete, read-only view of current and past stays.</p></div></div>
+      {error && <div className="alert alert-error" role="alert">{error}<button type="button" onClick={fetchAll}>Try again</button></div>}
+      {reservations.length === 0 ? <div className="workspace-empty"><h2>No reservations yet</h2><p>Reservations will appear here as guests begin booking stays.</p></div> : <div className="listing-table-wrap"><table className="listing-table"><thead><tr><th>Guest</th><th>Stay</th><th>Host</th><th>Dates</th><th>Total</th><th>Status</th></tr></thead><tbody>{reservations.map((reservation) => <tr key={reservation._id}><td data-label="Guest"><strong>{reservation.user?.username || 'Guest'}</strong><br /><small>{reservation.user?.email}</small></td><td data-label="Stay">{reservation.accommodation?.title || 'Accommodation'}<br /><small>{reservation.accommodation?.location}</small></td><td data-label="Host">{reservation.host?.username || 'Host'}</td><td data-label="Dates">{new Date(reservation.checkIn).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })} – {new Date(reservation.checkOut).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</td><td data-label="Total">{money(reservation.totalCost)}</td><td data-label="Status"><span className={`status-badge status-${reservation.status}`}>{reservation.status}</span></td></tr>)}</tbody></table></div>}
+    </section>
   );
 };
 

@@ -91,7 +91,7 @@ const loginUser = async (req, res, next) => {
 
 const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {
       return next(new AppError('Username, email, and password are required', 400));
@@ -102,7 +102,8 @@ const registerUser = async (req, res, next) => {
       return next(new AppError('An account with this email already exists', 409));
     }
 
-    const user = await User.create({ username, email, password, role: 'user' });
+    const userRole = ['user', 'host'].includes(role) ? role : 'user';
+    const user = await User.create({ username, email, password, role: userRole });
 
     res.status(201).json({
       status: 'success',

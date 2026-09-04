@@ -10,45 +10,14 @@ const AppError = require('../utils/AppError');
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * @desc    Get all accommodations, optionally filtered by location, price
- *          range, property type, minimum guest capacity, minimum rating,
- *          and/or amenities
+ * @desc    Get all accommodations with optional location filter
  * @route   GET /api/accommodations
  * @access  Public
  */
 const getAccommodations = async (req, res, next) => {
   try {
-    const { location, minPrice, maxPrice, type, guests, minRating, amenities } = req.query;
-    const filter = {};
-
-    if (location) {
-      filter.location = new RegExp(escapeRegex(location), 'i');
-    }
-
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice && !Number.isNaN(Number(minPrice))) filter.price.$gte = Number(minPrice);
-      if (maxPrice && !Number.isNaN(Number(maxPrice))) filter.price.$lte = Number(maxPrice);
-      if (Object.keys(filter.price).length === 0) delete filter.price;
-    }
-
-    if (type) {
-      filter.type = new RegExp(`^${escapeRegex(type)}$`, 'i');
-    }
-
-    if (guests && !Number.isNaN(Number(guests))) {
-      filter.guests = { $gte: Number(guests) };
-    }
-
-    if (minRating && !Number.isNaN(Number(minRating))) {
-      filter.rating = { $gte: Number(minRating) };
-    }
-
-    if (amenities) {
-      const requested = Array.isArray(amenities) ? amenities : amenities.split(',');
-      const cleaned = requested.map((a) => a.trim()).filter(Boolean);
-      if (cleaned.length > 0) filter.amenities = { $all: cleaned };
-    }
+    const { location } = req.query;
+    const filter = location ? { location: new RegExp(escapeRegex(location), 'i') } : {};
 
     const accommodations = await Accommodation.find(filter).populate('host', 'username');
 

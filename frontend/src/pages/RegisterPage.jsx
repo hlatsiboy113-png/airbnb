@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+const RegisterPage = () => {
+  const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const validate = () => {
     const newErrors = {};
+    if (!formData.username.trim()) newErrors.username = 'Name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Please enter a valid email';
     if (!formData.password) newErrors.password = 'Password is required';
@@ -33,14 +34,16 @@ const LoginPage = () => {
     setLoading(true);
     setApiError('');
     try {
-      const user = await login(formData.email, formData.password);
-      const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'http://localhost:3000';
+      const result = await register(formData.username, formData.email, formData.password, formData.role);
+      const adminUrl = process.env.REACT_APP_ADMIN_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
-      if (user.role === 'admin') navigate('/admin/dashboard');
-      else if (user.role === 'host') navigate('/host/dashboard');
-      else window.location.assign(`${publicUrl}?token=${encodeURIComponent(token)}`);
+      if (result.role === 'host') {
+        window.location.assign(`${adminUrl}/host/dashboard?token=${encodeURIComponent(token)}`);
+      } else {
+        navigate('/');
+      }
     } catch (error) {
-      setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      setApiError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -49,25 +52,17 @@ const LoginPage = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-title">WELCOME BACK</h1>
-        <div className="role-info">
-          <div className="role-block">
-            <strong>Guest / Tenant</strong>
-            <span>Find and book places to stay</span>
-          </div>
-          <div className="role-block">
-            <strong>Host</strong>
-            <span>List and manage your properties</span>
-          </div>
-          <div className="role-block">
-            <strong>Administrator</strong>
-            <span>Manage the Airbnb platform</span>
-          </div>
-        </div>
+        <h1 className="auth-title">Create your account</h1>
+        <p className="auth-subtitle">Join Airbnb to start exploring or hosting</p>
 
         {apiError && <div className="alert alert-error">{apiError}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label>Full Name</label>
+            <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Your full name" className={errors.username ? 'error-border' : ''} />
+            {errors.username && <span className="error">{errors.username}</span>}
+          </div>
           <div className="form-group">
             <label>Email</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
@@ -75,26 +70,28 @@ const LoginPage = () => {
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" className={errors.password ? 'error-border' : ''} />
+            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Create a password" className={errors.password ? 'error-border' : ''} />
             {errors.password && <span className="error">{errors.password}</span>}
           </div>
+          <div className="form-group">
+            <label>Account Type</label>
+            <select name="role" value={formData.role} onChange={handleChange} className="role-select">
+              <option value="user">Guest / Tenant — Find and book places to stay</option>
+              <option value="host">Host — List and manage your properties</option>
+            </select>
+          </div>
           <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
         <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Sign Up</Link></p>
-          <div className="test-credentials">
-            <p><strong>Test Credentials:</strong></p>
-            <p>Guest: john@example.com / password123</p>
-            <p>Host: jane@example.com / password321</p>
-            <p>Admin: admin@example.com / admin123</p>
-          </div>
+          <p>Already have an account? <Link to="/login">Sign In</Link></p>
+          <p className="host-prompt">Want to list your property? Select <strong>Host</strong> above.</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

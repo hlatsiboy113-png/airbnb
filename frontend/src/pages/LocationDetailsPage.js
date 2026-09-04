@@ -94,7 +94,7 @@ const LocationDetailsPage = () => {
         guests: guestCount,
         totalCost,
       });
-      setReserveMsg('Reservation confirmed! 🎉');
+      setReserveMsg('Reservation confirmed. Your trip details are ready in My reservations.');
     } catch (err) {
       setReserveMsg(err.response?.data?.message || 'Reservation failed. Please try again.');
     } finally {
@@ -204,6 +204,25 @@ const LocationDetailsPage = () => {
               </div>
             </div>
           )}
+
+          <div className="details-section host-details-section">
+            <h3>Meet your host</h3>
+            <p><strong>{acc.host?.username || 'Your host'}</strong> is committed to a considerate, well-prepared stay.</p>
+            <div className="host-detail-badges">
+              <span>Responsive host</span>
+              <span>Identity confirmed</span>
+            </div>
+          </div>
+
+          <div className="details-section">
+            <h3>Health &amp; safety</h3>
+            <p>This host follows enhanced cleaning practices and provides a self check-in option when available. Review the property details before you arrive.</p>
+          </div>
+
+          <div className="details-section">
+            <h3>Cancellation policy</h3>
+            <p>Cancel before check-in for a full refund of the nightly rate, subject to the booking terms shown at checkout. Service fees may be non-refundable.</p>
+          </div>
 
           <div className="details-section">
             <h3>House rules</h3>

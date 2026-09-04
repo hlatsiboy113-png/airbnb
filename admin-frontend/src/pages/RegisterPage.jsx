@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
@@ -8,6 +8,7 @@ const RegisterPage = () => {
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const validate = () => {
     const newErrors = {};
@@ -33,8 +34,14 @@ const RegisterPage = () => {
     setLoading(true);
     setApiError('');
     try {
-      await api.post('/users/register', formData);
-      navigate('/login');
+      const result = await register(formData.username, formData.email, formData.password, formData.role);
+      const token = localStorage.getItem('token');
+      const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'http://localhost:3000';
+      if (result.role === 'host') {
+        navigate('/host/dashboard');
+      } else {
+        window.location.assign(`${publicUrl}?token=${encodeURIComponent(token)}`);
+      }
     } catch (error) {
       setApiError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

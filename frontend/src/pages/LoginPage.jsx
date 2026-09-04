@@ -34,11 +34,11 @@ const LoginPage = () => {
     setApiError('');
     try {
       const user = await login(formData.email, formData.password);
-      const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'http://localhost:3000';
+      const adminUrl = process.env.REACT_APP_ADMIN_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
-      if (user.role === 'admin') navigate('/admin/dashboard');
-      else if (user.role === 'host') navigate('/host/dashboard');
-      else window.location.assign(`${publicUrl}?token=${encodeURIComponent(token)}`);
+      if (user.role === 'admin') window.location.assign(`${adminUrl}/admin/dashboard?token=${encodeURIComponent(token)}`);
+      else if (user.role === 'host') window.location.assign(`${adminUrl}/host/dashboard?token=${encodeURIComponent(token)}`);
+      else navigate('/');
     } catch (error) {
       setApiError(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
