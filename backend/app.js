@@ -6,15 +6,23 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// CORS: allow all origins in development; in production restrict to
-// the comma-separated list in CORS_ORIGIN (e.g. the two Vercel domains).
+// CORS is permissive for local development, but production must use an
+// explicit comma-separated allow-list of the deployed frontend origins.
 const corsOrigin = process.env.CORS_ORIGIN;
-if (corsOrigin) {
-  const allowed = corsOrigin.split(',').map((o) => o.trim());
-  app.use(cors({ origin: allowed }));
-} else {
-  app.use(cors());
-}
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = corsOrigin
+  ? corsOrigin.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Non-browser requests (health checks, server-to-server calls, and local
+    // CLI tests) do not send an Origin header and should remain usable.
+    if (!origin) return callback(null, true);
+    if (!isProduction && allowedOrigins.length === 0) return callback(null, true);
+    return callback(null, allowedOrigins.includes(origin));
+  },
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
