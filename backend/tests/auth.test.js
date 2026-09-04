@@ -115,6 +115,48 @@ describe('POST /api/users/register', () => {
     expect(res.body.user.role).toBe('user');
     expect(jwt.verify(res.body.token, process.env.JWT_SECRET).userId).toBe('new-user');
   });
+
+  it('creates a host account when host registration is requested (201)', async () => {
+    User.findOne.mockResolvedValue(null);
+    User.create.mockResolvedValue({
+      _id: 'new-host',
+      username: 'New Host',
+      email: 'host@example.com',
+      role: 'host',
+    });
+
+    const res = await request(app).post('/api/users/register').send({
+      username: 'New Host',
+      email: 'host@example.com',
+      password: 'password123',
+      role: 'host',
+    });
+
+    expect(res.status).toBe(201);
+    expect(User.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'host' }));
+    expect(res.body.user.role).toBe('host');
+  });
+
+  it('never creates a public administrator account from registration input (201)', async () => {
+    User.findOne.mockResolvedValue(null);
+    User.create.mockResolvedValue({
+      _id: 'safe-user',
+      username: 'Attempted Admin',
+      email: 'attempt@example.com',
+      role: 'user',
+    });
+
+    const res = await request(app).post('/api/users/register').send({
+      username: 'Attempted Admin',
+      email: 'attempt@example.com',
+      password: 'password123',
+      role: 'admin',
+    });
+
+    expect(res.status).toBe(201);
+    expect(User.create).toHaveBeenCalledWith(expect.objectContaining({ role: 'user' }));
+    expect(res.body.user.role).toBe('user');
+  });
 });
 
 describe('GET /api/users/me', () => {
