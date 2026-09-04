@@ -38,7 +38,10 @@ const LoginPage = () => {
       const token = localStorage.getItem('token');
       if (user.role === 'admin') window.location.assign(`${adminUrl}/admin/dashboard?token=${encodeURIComponent(token)}`);
       else if (user.role === 'host') window.location.assign(`${adminUrl}/host/dashboard?token=${encodeURIComponent(token)}`);
-      else navigate('/');
+      else {
+        const redirect = new URLSearchParams(window.location.search).get('redirect');
+        navigate(redirect && redirect.startsWith('/') ? redirect : '/');
+      }
     } catch (error) {
       setApiError(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {

@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api, { getImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const LocationDetailsPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [acc, setAcc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Calculator state
-  const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-  const [checkIn, setCheckIn] = useState(today);
-  const [checkOut, setCheckOut] = useState(tomorrow);
+  const dayAfterTomorrow = new Date(Date.now() + 172800000).toISOString().split('T')[0];
+  const [checkIn, setCheckIn] = useState(tomorrow);
+  const [checkOut, setCheckOut] = useState(dayAfterTomorrow);
   const [guests, setGuests] = useState(1);
   const [reserving, setReserving] = useState(false);
   const [reserveMsg, setReserveMsg] = useState('');
@@ -62,7 +63,7 @@ const LocationDetailsPage = () => {
 
   const handleReserve = async () => {
     if (!user) {
-      setReserveMsg('Please log in to make a reservation.');
+      navigate(`/login?redirect=${encodeURIComponent(`/listing/${id}`)}`);
       return;
     }
 
@@ -166,9 +167,8 @@ const LocationDetailsPage = () => {
           <div className="details-section">
             <h3>Where you'll sleep</h3>
             <div className="sleep-card">
-              <span className="sleep-icon">🛏</span>
-              <p>Bedroom {acc.bedrooms}</p>
-              <span>{acc.bedrooms} bed{acc.bedrooms !== 1 ? 's' : ''}</span>
+              {allImages[2] ? <img src={allImages[2]} alt={`${acc.title} bedroom`} className="sleep-image" /> : <span className="sleep-icon">🛏</span>}
+              <div><p>Bedroom {acc.bedrooms}</p><span>{acc.bedrooms} bed{acc.bedrooms !== 1 ? 's' : ''}</span></div>
             </div>
           </div>
 
@@ -248,7 +248,7 @@ const LocationDetailsPage = () => {
               <div className="date-inputs">
                 <div className="date-field">
                   <label>CHECK-IN</label>
-                  <input type="date" value={checkIn} min={today} onChange={(e) => setCheckIn(e.target.value)} />
+                  <input type="date" value={checkIn} min={tomorrow} onChange={(e) => setCheckIn(e.target.value)} />
                 </div>
                 <div className="date-field">
                   <label>CHECKOUT</label>
