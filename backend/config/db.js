@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 
 let memoryServer;
 
 const startMemoryMongo = async () => {
+  const { MongoMemoryServer } = require('mongodb-memory-server');
   memoryServer = await MongoMemoryServer.create();
   return memoryServer.getUri();
 };
