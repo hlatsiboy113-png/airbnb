@@ -43,7 +43,11 @@ const LoginPage = () => {
         navigate(redirect && redirect.startsWith('/') ? redirect : '/');
       }
     } catch (error) {
-      setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      if (!error.response) {
+        setApiError('Unable to reach the server. Please try again later.');
+      } else {
+        setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

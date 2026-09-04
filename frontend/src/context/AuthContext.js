@@ -32,11 +32,14 @@ export const AuthProvider = ({ children }) => {
         const response = await api.get('/users/me');
         setUser(response.data.data);
         localStorage.setItem('user', JSON.stringify(response.data.data));
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        delete api.defaults.headers.common.Authorization;
-        setUser(null);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          delete api.defaults.headers.common.Authorization;
+          setUser(null);
+        }
+        // Network errors or server downtime keep the cached session intact.
       } finally {
         setLoading(false);
       }

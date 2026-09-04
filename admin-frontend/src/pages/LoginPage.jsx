@@ -40,7 +40,11 @@ const LoginPage = () => {
       else if (user.role === 'host') navigate('/host/dashboard');
       else window.location.assign(`${publicUrl}?token=${encodeURIComponent(token)}`);
     } catch (error) {
-      setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      if (!error.response) {
+        setApiError('Unable to reach the server. Please try again later.');
+      } else {
+        setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

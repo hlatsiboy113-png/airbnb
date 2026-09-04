@@ -6,8 +6,16 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS: allow all origins in development; in production restrict to
+// the comma-separated list in CORS_ORIGIN (e.g. the two Vercel domains).
+const corsOrigin = process.env.CORS_ORIGIN;
+if (corsOrigin) {
+  const allowed = corsOrigin.split(',').map((o) => o.trim());
+  app.use(cors({ origin: allowed }));
+} else {
+  app.use(cors());
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
