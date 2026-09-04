@@ -61,6 +61,23 @@ describe('POST /api/users/login', () => {
     const decoded = jwt.verify(res.body.token, process.env.JWT_SECRET);
     expect(decoded.userId).toBe('user1');
   });
+
+  it('rejects a valid password when the selected sign-in role does not match (403)', async () => {
+    User.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: 'user1',
+        role: 'host',
+        matchPassword: jest.fn().mockResolvedValue(true),
+      }),
+    });
+
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({ email: 'jane@example.com', password: 'password321', role: 'guest' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/registered as a host/i);
+  });
 });
 
 describe('POST /api/users/register', () => {

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', role: 'guest' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const LoginPage = () => {
     setLoading(true);
     setApiError('');
     try {
-      const user = await login(formData.email, formData.password);
+      const user = await login(formData.email, formData.password, formData.role);
       const adminUrl = process.env.REACT_APP_ADMIN_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
       if (user.role === 'admin') window.location.assign(`${adminUrl}/admin/dashboard?token=${encodeURIComponent(token)}`);
@@ -69,6 +69,18 @@ const LoginPage = () => {
         </div>
 
         {apiError && <div className="alert alert-error">{apiError}</div>}
+
+        <div className="role-picker" role="group" aria-labelledby="guest-login-role-label">
+          <span id="guest-login-role-label" className="role-picker-label">Sign in as</span>
+          <div className="role-options">
+            {[['guest', 'Guest', 'Find and book stays'], ['host', 'Host', 'Manage your listings'], ['admin', 'Administrator', 'Manage the platform']].map(([value, label, description]) => (
+              <label key={value} className={`role-option ${formData.role === value ? 'is-selected' : ''}`}>
+                <input type="radio" name="role" value={value} checked={formData.role === value} onChange={handleChange} />
+                <span><strong>{label}</strong><small>{description}</small></span>
+              </label>
+            ))}
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">

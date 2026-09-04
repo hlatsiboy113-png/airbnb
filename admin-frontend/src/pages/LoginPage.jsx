@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', role: 'admin' });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const LoginPage = () => {
     setLoading(true);
     setApiError('');
     try {
-      const user = await login(formData.email, formData.password);
+      const user = await login(formData.email, formData.password, formData.role);
       const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'http://localhost:3000';
       const token = localStorage.getItem('token');
       if (user.role === 'admin') navigate('/admin/dashboard');
@@ -50,18 +50,15 @@ const LoginPage = () => {
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">WELCOME BACK</h1>
-        <div className="role-info">
-          <div className="role-block">
-            <strong>Guest / Tenant</strong>
-            <span>Find and book places to stay</span>
-          </div>
-          <div className="role-block">
-            <strong>Host</strong>
-            <span>List and manage your properties</span>
-          </div>
-          <div className="role-block">
-            <strong>Administrator</strong>
-            <span>Manage the Airbnb platform</span>
+        <div className="role-picker" role="group" aria-labelledby="workspace-login-role-label">
+          <span id="workspace-login-role-label" className="role-picker-label">Choose your sign-in role</span>
+          <div className="role-options">
+            {[['guest', 'Guest', 'Find and book stays'], ['host', 'Host', 'Manage your listings'], ['admin', 'Administrator', 'Manage the platform']].map(([value, label, description]) => (
+              <label key={value} className={`role-option ${formData.role === value ? 'is-selected' : ''}`}>
+                <input type="radio" name="role" value={value} checked={formData.role === value} onChange={handleChange} />
+                <span><strong>{label}</strong><small>{description}</small></span>
+              </label>
+            ))}
           </div>
         </div>
 

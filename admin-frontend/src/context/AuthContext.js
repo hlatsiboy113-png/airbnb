@@ -52,8 +52,8 @@ export const AuthProvider = ({ children }) => {
     return account;
   };
 
-  const login = async (email, password) => {
-    const response = await api.post('/users/login', { email, password });
+  const login = async (email, password, role) => {
+    const response = await api.post('/users/login', { email, password, role });
     return persistSession(response.data);
   };
 

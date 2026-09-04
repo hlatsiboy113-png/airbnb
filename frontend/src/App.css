@@ -214,6 +214,14 @@ img { display: block; max-width: 100%; }
 .auth-card { width: min(100%, 460px); padding: 36px; background: #fff; border: 1px solid #ebebeb; border-radius: 14px; box-shadow: var(--shadow-card); }
 .auth-title { margin: 0; font-size: 25px; text-align: center; }
 .auth-subtitle { margin: 8px 0 26px; color: var(--muted); text-align: center; }
+.role-picker { display: grid; gap: 9px; margin-bottom: 20px; }
+.role-picker-label { color: var(--ink); font-size: 13px; font-weight: 700; }
+.role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.role-option { display: grid; gap: 4px; min-height: 76px; padding: 10px; background: var(--wash); border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+.role-option.is-selected { background: #fff5f6; border-color: var(--coral); box-shadow: 0 0 0 1px var(--coral); }
+.role-option input { position: absolute; opacity: 0; pointer-events: none; }
+.role-option strong { display: block; font-size: 12px; }
+.role-option small { display: block; color: var(--muted); font-size: 11px; line-height: 1.25; }
 .form-group { display: grid; gap: 7px; margin-bottom: 16px; }
 .form-group input { height: 49px; padding: 0 13px; border: 1px solid #b0b0b0; border-radius: 8px; }
 .form-group input:focus { border-color: var(--ink); }
@@ -332,7 +340,10 @@ img { display: block; max-width: 100%; }
 .host-detail-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .host-detail-badges span { padding: 6px 10px; background: var(--wash); border-radius: 999px; color: #484848; font-size: 12px; font-weight: 600; }
 .footer-control { padding: 0; background: transparent; color: #484848; font-size: 13px; font-weight: 600; text-decoration: underline; }
-@media (max-width: 520px) { .location-card-body { padding: 13px; } .card-title { font-size: 15px; } .card-amenities { display: none; } }
+@media (max-width: 520px) {
+  .role-options { grid-template-columns: 1fr; }
+  .location-card-body { padding: 13px; } .card-title { font-size: 15px; } .card-amenities { display: none; }
+}
 
 .result-skeleton { display: grid; grid-template-columns: 190px 1fr; min-height: 205px; overflow: hidden; background: #fff; border: 1px solid #ebebeb; border-radius: 12px; box-shadow: var(--shadow-card); }
 .result-skeleton > div { grid-row: 1 / span 4; width: 100%; height: 100%; background: linear-gradient(110deg, #e7e7e7 8%, #f7f7f7 18%, #e7e7e7 33%); background-size: 200% 100%; animation: result-shimmer 1.3s linear infinite; }

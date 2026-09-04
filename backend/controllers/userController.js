@@ -62,7 +62,7 @@ const ensureDefaultUsers = async () => {
  */
 const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return next(new AppError('Please provide email and password', 400));
@@ -72,6 +72,11 @@ const loginUser = async (req, res, next) => {
 
     if (!user || !(await user.matchPassword(password))) {
       return next(new AppError('Invalid email or password', 401));
+    }
+
+    const requestedRole = role === 'guest' ? 'user' : role;
+    if (requestedRole && requestedRole !== user.role) {
+      return next(new AppError(`This account is registered as a ${user.role === 'user' ? 'guest' : user.role}. Choose the correct sign-in role.`, 403));
     }
 
     res.status(200).json({
