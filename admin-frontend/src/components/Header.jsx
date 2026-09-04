@@ -46,7 +46,7 @@ const Header = () => {
           {open && <div className="admin-profile-menu" role="menu">
             {isAdmin && <Link role="menuitem" to="/admin/users" onClick={() => setOpen(false)}>Manage users</Link>}
             {isHost && <Link role="menuitem" to="/host/reservations" onClick={() => setOpen(false)}>Host reservations</Link>}
-            <Link role="menuitem" to="/reservations" onClick={() => setOpen(false)}>My reservations</Link>
+            {!isHost && <Link role="menuitem" to="/reservations" onClick={() => setOpen(false)}>My reservations</Link>}
             <button role="menuitem" type="button" onClick={logoutAndLeave}>Log out</button>
           </div>}
         </div>

@@ -11,9 +11,9 @@ import HostReservations from './pages/HostReservations';
 import HostDashboard from './pages/HostDashboard';
 import ManageUsers from './pages/ManageUsers';
 import UserReservationsPage from './pages/UserReservationsPage';
-import HomePage from './pages/HomePage';
 import LocationPage from './pages/LocationPage';
 import LocationDetailsPage from './pages/LocationDetailsPage';
+import { useAuth } from './context/AuthContext';
 
 function NotFound() {
   return (
@@ -26,6 +26,14 @@ function NotFound() {
   );
 }
 
+function WorkspaceLanding() {
+  const { loading, user } = useAuth();
+  if (loading) return <section className="workspace-shell"><div className="workspace-skeleton" role="status">Opening your workspace…</div></section>;
+  if (user?.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  if (user?.role === 'host') return <Navigate to="/host/dashboard" replace />;
+  return <Navigate to="/admin/login" replace />;
+}
+
 function AdminFrame() {
   const { pathname } = useLocation();
   const showHeader = !['/admin/login', '/login', '/register'].includes(pathname);
@@ -35,7 +43,7 @@ function AdminFrame() {
       {showHeader && <Header />}
       <main className="admin-main">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<WorkspaceLanding />} />
           <Route path="/explore" element={<LocationPage />} />
           <Route path="/locations/:location" element={<LocationPage />} />
           <Route path="/listing/:id" element={<LocationDetailsPage />} />
