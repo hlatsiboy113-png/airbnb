@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+if (!process.env.REACT_APP_API_URL && process.env.NODE_ENV === 'production') {
+  throw new Error('REACT_APP_API_URL is required when building for production. Configure it in the deployment environment.');
+}
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 export const BACKEND_URL = API_URL.replace(/\/api\/?$/, '');
 export const getImageUrl = (image) => (
