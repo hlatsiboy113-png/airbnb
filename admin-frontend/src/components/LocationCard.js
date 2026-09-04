@@ -8,9 +8,9 @@ const LocationCard = ({ accommodation }) => {
   const imageUrl = images && images.length > 0 ? getImageUrl(images[0]) : null;
 
   return (
-    <div className="location-card" onClick={() => navigate(`/listing/${_id}`)}>
+    <div className="location-card" onClick={() => navigate(`/listing/${_id}`)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/listing/${_id}`); } }}>
       <div className="location-card-image">
-        {imageUrl ? <img src={imageUrl} alt={title} loading="lazy" /> : <div className="no-image">No Image</div>}
+        {imageUrl ? <img src={imageUrl} alt={`${title} — ${location || 'property'}`} loading="lazy" /> : <div className="no-image" role="img" aria-label="No image available">No Image</div>}
       </div>
       <div className="location-card-body">
         <div className="location-card-header">

@@ -2,9 +2,9 @@ import React from 'react';
 
 const footerLinks = {
   Support: ['Help Centre', 'AirCover', 'Anti-discrimination', 'Disability support', 'Cancellation options', 'Report neighbourhood concern'],
-  Community: ['Airbnb.org: disaster relief housing', 'Combating discrimination'],
-  Hosting: ['Airbnb your home', 'AirCover for Hosts', 'Hosting resources', 'Community forum', 'Hosting responsibly', 'Join a free Hosting class'],
-  Airbnb: ['Newsroom', 'New features', 'Careers', 'Investors', 'Gift cards', 'Airbnb.org emergency stays'],
+  Community: ['AirStay.org: disaster relief housing', 'Combating discrimination'],
+  Hosting: ['AirStay your home', 'AirCover for Hosts', 'Hosting resources', 'Community forum', 'Hosting responsibly', 'Join a free Hosting class'],
+  AirStay: ['Newsroom', 'New features', 'Careers', 'Investors', 'Gift cards', 'Emergency stays'],
 };
 
 const Footer = () => (
@@ -25,7 +25,7 @@ const Footer = () => (
     </div>
     <div className="footer-copyright">
       <div className="copyright-left">
-        <span>© 2026 Airbnb, Inc.</span>
+        <span>© 2026 AirStay, Inc.</span>
         <span>·</span>
         <a href="/">Privacy</a>
         <span>·</span>

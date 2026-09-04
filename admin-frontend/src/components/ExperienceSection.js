@@ -6,7 +6,7 @@ const ExperienceSection = () => {
 
   return (
     <section className="experience-section">
-      <h2>Discover Airbnb Experiences</h2>
+      <h2>Discover AirStay Experiences</h2>
       <div className="experience-grid">
         <div className="experience-card trip">
           <div className="experience-content">

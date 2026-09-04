@@ -23,7 +23,7 @@ app.use('/api/reservations', require('./routes/reservationRoutes'));
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'success',
-    message: 'Airbnb API is running',
+    message: 'AirStay API is running',
   });
 });
 

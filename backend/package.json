@@ -1,7 +1,7 @@
 {
-  "name": "airbnb-backend",
+  "name": "airstay-backend",
   "version": "1.0.0",
-  "description": "Airbnb Clone Backend API",
+  "description": "AirStay Backend API",
   "main": "server.js",
   "engines": {
     "node": "18.x"
@@ -19,7 +19,7 @@
     ]
   },
   "keywords": [
-    "airbnb",
+    "airstay",
     "api",
     "nodejs",
     "express"

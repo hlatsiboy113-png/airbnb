@@ -8,7 +8,7 @@ const ShopSection = () => {
     <section className="shop-section">
       <div className="shop-content">
         <div className="shop-text">
-          <h2>Shop Airbnb gift cards</h2>
+          <h2>Shop AirStay gift cards</h2>
           <button type="button" onClick={() => navigate('/locations/Tokyo')}>Learn more</button>
         </div>
         <div className="shop-image">

@@ -53,7 +53,7 @@ const RegisterPage = () => {
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Create your account</h1>
-        <p className="auth-subtitle">Join Airbnb to start exploring or hosting</p>
+        <p className="auth-subtitle">Join AirStay to start exploring or hosting</p>
 
         {apiError && <div className="alert alert-error">{apiError}</div>}
 

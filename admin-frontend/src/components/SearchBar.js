@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Airbnb-style search bar with Where / When / Who sections.
+ * AirStay search bar with Where / When / Who sections.
  * Fully functional: destination navigates to the matching location page,
  * with check-in/check-out dates and guest count passed through as query
  * params that LocationPage reads and applies.
@@ -56,7 +56,7 @@ const SearchBar = () => {
   const whoLabel = guests > 1 ? `${guests} guests` : 'Add guests';
 
   return (
-    <form className="airbnb-search-bar" onSubmit={handleSearch} ref={containerRef}>
+    <form className="airstay-search-bar" onSubmit={handleSearch} ref={containerRef}>
       <div
         className={`search-section search-where ${openSection === 'where' ? 'active' : ''}`}
         onClick={() => setOpenSection('where')}

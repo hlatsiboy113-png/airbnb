@@ -17,7 +17,7 @@ describe('app.js (no database required)', () => {
 
   it('GET / (bare root) returns 404 via the catch-all, since no frontend is served from the API host', async () => {
     // This mirrors the real production behaviour observed on the live Render
-    // backend (https://airbnb-zq1x.onrender.com/ returns 404) — confirms
+    // backend (returns 404) — confirms
     // that response is expected/correct, not a deployment bug.
     const res = await request(app).get('/');
     expect(res.status).toBe(404);
