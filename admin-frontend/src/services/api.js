@@ -32,7 +32,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/admin/login' && currentPath !== '/login' && currentPath !== '/register') {
+      const isSessionProbe = (error.config?.url || '').includes('/users/me');
+      if (currentPath !== '/admin/login' && currentPath !== '/login' && currentPath !== '/register' && !isSessionProbe) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/admin/login';
