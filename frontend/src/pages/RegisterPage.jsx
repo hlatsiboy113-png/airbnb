@@ -59,23 +59,23 @@ const RegisterPage = () => {
         <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">Join AirStay to start exploring or hosting</p>
 
-        {apiError && <div className="alert alert-error">{apiError}</div>}
+        {apiError && <div className="error-banner" role="alert">{apiError}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label>Full Name</label>
             <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Your full name" className={errors.username ? 'error-border' : ''} />
-            {errors.username && <span className="error">{errors.username}</span>}
+            {errors.username && <span className="field-error">{errors.username}</span>}
           </div>
           <div className="form-group">
             <label>Email</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
-            {errors.email && <span className="error">{errors.email}</span>}
+            {errors.email && <span className="field-error">{errors.email}</span>}
           </div>
           <div className="form-group">
             <label>Password</label>
             <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Create a password" className={errors.password ? 'error-border' : ''} />
-            {errors.password && <span className="error">{errors.password}</span>}
+            {errors.password && <span className="field-error">{errors.password}</span>}
           </div>
           <div className="form-group">
             <label>Account Type</label>

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -15,7 +15,7 @@ function NotFound() {
       <p className="eyebrow">404</p>
       <h1>Page not found</h1>
       <p>The place you are looking for has moved, or it is no longer available.</p>
-      <a className="primary-button" href="/">Return home</a>
+      <Link to="/" className="primary-button">Return home</Link>
     </section>
   );
 }

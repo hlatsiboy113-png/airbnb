@@ -10,11 +10,7 @@ const ProtectedRoute = ({ children, requireHost = false }) => {
   const { isAuthenticated, isHost, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-        Loading...
-      </div>
-    );
+    return <div className="loading" role="status" aria-label="Checking your session">Checking your session...</div>;
   }
 
   if (!isAuthenticated) {

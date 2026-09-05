@@ -68,7 +68,7 @@ const LocationPage = () => {
         </div>
         <SearchBar />
       </div>
-      {loading && <div className="locations-grid" role="status" aria-label="Loading stays">{Array.from({ length: 4 }, (_, index) => <ResultSkeleton key={index} />)}</div>}
+      {loading && <div className="locations-grid" role="status" aria-label="Loading stays">{Array.from({ length: 6 }, (_, index) => <ResultSkeleton key={index} />)}</div>}
       {!loading && error && <div className="error" role="alert"><div><strong>Something went wrong.</strong><p>{error}</p><button type="button" className="retry-button" onClick={fetchAccommodations}>Try again</button></div></div>}
       {!loading && !error && accommodations.length === 0 && <div className="empty-state"><div><h2>No stays match your search</h2><p>We could not find stays in {headingPlace}{guestNote}. Try another destination or clear your search.</p><button type="button" className="primary-button" onClick={() => navigate('/explore')}>Browse all stays</button></div></div>}
       {!loading && !error && accommodations.length > 0 && <div className="locations-grid">{accommodations.map((accommodation) => <LocationCard key={accommodation._id} accommodation={accommodation} to={`/listing/${accommodation._id}${detailQuery}`} />)}</div>}

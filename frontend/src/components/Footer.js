@@ -19,7 +19,7 @@ const Footer = () => (
     </div>
     <div className="footer-copyright">
       <div className="copyright-left"><span>© 2026 AirStay, Inc.</span><a href="/" onClick={(event) => event.preventDefault()}>Privacy</a><a href="/" onClick={(event) => event.preventDefault()}>Terms</a><a href="/" onClick={(event) => event.preventDefault()}>Sitemap</a></div>
-      <div className="copyright-right"><button type="button" className="footer-control" aria-label="Choose language">Language: English (ZA)</button><button type="button" className="footer-control" aria-label="Choose currency">Currency: ZAR</button><span><a href="/" onClick={(event) => event.preventDefault()}>Facebook</a> · <a href="/" onClick={(event) => event.preventDefault()}>Instagram</a></span></div>
+      <div className="copyright-right"><span className="footer-control">Language: English (ZA)</span><span className="footer-control">Currency: ZAR</span><span><a href="/" onClick={(event) => event.preventDefault()}>Facebook</a> · <a href="/" onClick={(event) => event.preventDefault()}>Instagram</a></span></div>
     </div>
   </footer>
 );

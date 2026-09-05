@@ -98,9 +98,17 @@ const SearchBar = () => {
 
       <div
         className={`guest-search-field guest-search-when ${openSection === 'when' ? 'active' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label="When"
+        aria-expanded={openSection === 'when'}
+        aria-haspopup="dialog"
         onClick={(event) => {
           event.stopPropagation();
           toggleSection('when');
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleSection('when'); }
         }}
       >
         <span>When</span>
@@ -123,9 +131,17 @@ const SearchBar = () => {
 
       <div
         className={`guest-search-field guest-search-who ${openSection === 'who' ? 'active' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Who"
+        aria-expanded={openSection === 'who'}
+        aria-haspopup="dialog"
         onClick={(event) => {
           event.stopPropagation();
           toggleSection('who');
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleSection('who'); }
         }}
       >
         <span>Who</span>

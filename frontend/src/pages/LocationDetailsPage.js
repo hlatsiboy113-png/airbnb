@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api, { getImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -37,6 +37,15 @@ const LocationDetailsPage = () => {
     fetchAccommodation();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch only when the id param changes
   }, [id]);
+
+  useEffect(() => {
+    if (activeImage === null) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setActiveImage(null);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [activeImage]);
 
   const fetchAccommodation = async () => {
     try {
@@ -116,9 +125,33 @@ const LocationDetailsPage = () => {
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">{error}</div>;
-  if (!acc) return <div className="error">Accommodation not found</div>;
+  if (loading) return <div className="loading" role="status" aria-label="Loading stay details">Loading stay details...</div>;
+  if (error) {
+    return (
+      <section className="location-page">
+        <div className="error" role="alert">
+          <div>
+            <strong>Something went wrong.</strong>
+            <p>{error}</p>
+            <button type="button" className="retry-button" onClick={fetchAccommodation}>Try again</button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  if (!acc) {
+    return (
+      <section className="location-page">
+        <div className="error">
+          <div>
+            <strong>Stay not found</strong>
+            <p>The listing you are looking for may have moved, or it is no longer available.</p>
+            <Link to="/explore" className="primary-button">Browse all stays</Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const images = acc.images || [];
   const mainImage = images[0] ? getImageUrl(images[0]) : null;
@@ -155,7 +188,7 @@ const LocationDetailsPage = () => {
       </div>
 
       {activeImage !== null && (
-        <div className="gallery-lightbox" role="dialog" aria-label="Image gallery" onClick={() => setActiveImage(null)}>
+        <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label="Image gallery" onClick={() => setActiveImage(null)}>
           <button type="button" className="gallery-close" aria-label="Close gallery" onClick={() => setActiveImage(null)}>×</button>
           <button type="button" className="gallery-prev" aria-label="Previous image" onClick={(event) => { event.stopPropagation(); setActiveImage((activeImage - 1 + allImages.length) % allImages.length); }}>‹</button>
           <img src={allImages[activeImage]} alt={`${acc.title} ${activeImage + 1}`} onClick={(event) => event.stopPropagation()} />
@@ -281,7 +314,12 @@ const LocationDetailsPage = () => {
             <button className="reserve-btn" onClick={handleReserve} disabled={reserving}>
               {reserving ? 'Reserving...' : 'Reserve'}
             </button>
-            {reserveMsg && <div className={`reserve-msg ${reserveMsg.includes('confirmed') ? 'success' : 'error'}`}>{reserveMsg}</div>}
+            {reserveMsg && (
+              <div className={`reserve-msg ${reserveMsg.includes('confirmed') ? 'success' : 'error'}`} role={reserveMsg.includes('confirmed') ? 'status' : 'alert'}>
+                {reserveMsg}
+                {reserveMsg.includes('confirmed') && <><br /><Link to="/reservations">View my reservations</Link></>}
+              </div>
+            )}
 
             <div className="cost-breakdown">
               <div className="cost-row">

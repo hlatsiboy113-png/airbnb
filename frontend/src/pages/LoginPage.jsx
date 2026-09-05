@@ -56,7 +56,7 @@ const LoginPage = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-title">WELCOME BACK</h1>
+        <h1 className="auth-title">Welcome back</h1>
         <div className="role-info">
           <div className="role-block">
             <strong>Guest / Tenant</strong>
@@ -72,7 +72,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {apiError && <div className="alert alert-error">{apiError}</div>}
+        {apiError && <div className="error-banner" role="alert">{apiError}</div>}
 
         <div className="role-picker" role="group" aria-labelledby="guest-login-role-label">
           <span id="guest-login-role-label" className="role-picker-label">Sign in as</span>
@@ -90,12 +90,12 @@ const LoginPage = () => {
           <div className="form-group">
             <label>Email</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
-            {errors.email && <span className="error">{errors.email}</span>}
+            {errors.email && <span className="field-error">{errors.email}</span>}
           </div>
           <div className="form-group">
             <label>Password</label>
             <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" className={errors.password ? 'error-border' : ''} />
-            {errors.password && <span className="error">{errors.password}</span>}
+            {errors.password && <span className="field-error">{errors.password}</span>}
           </div>
           <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
