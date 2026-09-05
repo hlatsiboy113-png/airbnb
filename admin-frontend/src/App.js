@@ -59,6 +59,7 @@ function AdminFrame() {
           <Route path="/host/dashboard" element={<ProtectedRoute requireHost><HostDashboard /></ProtectedRoute>} />
           <Route path="/host/listings" element={<ProtectedRoute requireHost><ViewListings /></ProtectedRoute>} />
           <Route path="/host/create" element={<ProtectedRoute requireHost><CreateListing /></ProtectedRoute>} />
+          <Route path="/host/update/:id" element={<ProtectedRoute requireHost><UpdateListing /></ProtectedRoute>} />
           <Route path="/host/reservations" element={<ProtectedRoute requireHost><HostReservations /></ProtectedRoute>} />
           <Route path="/reservations" element={<ProtectedRoute><UserReservationsPage /></ProtectedRoute>} />
           <Route path="/my-reservations" element={<Navigate to="/reservations" replace />} />

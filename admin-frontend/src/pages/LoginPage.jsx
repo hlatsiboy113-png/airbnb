@@ -34,7 +34,7 @@ const LoginPage = () => {
     setApiError('');
     try {
       const user = await login(formData.email, formData.password, formData.role);
-      const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'http://localhost:3000';
+      const publicUrl = process.env.REACT_APP_PUBLIC_URL || 'https://airbnb-guest.onrender.com';
       const token = localStorage.getItem('token');
       if (user.role === 'admin') navigate('/admin/dashboard');
       else if (user.role === 'host') navigate('/host/dashboard');

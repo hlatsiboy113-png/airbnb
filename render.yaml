@@ -1,0 +1,57 @@
+services:
+  # API backend. Production must run repo HEAD:
+  #   - 2026-09-05: deployed backend predates the auth guards in
+  #     accommodationRoutes.js and the null-safe login in userController.js,
+  #     which made ALL /api/users/login & /api/users/register calls 500
+  #     (even for unknown emails) and unprotected POST /api/accommodations.
+  # A redeploy of this service is the single step that clears the host/src
+  # auth failures. JWT_SECRET and MONGO_URI must be set in the Render dashboard.
+  - type: web
+    name: airstay-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://airbnb-guest.onrender.com,https://airbnb-1-e7hp.onrender.com
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
+  # Guest frontend. The SPA rewrite below is what makes /login and any other
+  # deep route render the app instead of a 404.
+  - type: static
+    name: airstay-guest-frontend
+    rootDir: frontend
+    buildCommand: npm ci && CI=false npm run build
+    publishPath: build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://airbnb-zq1x.onrender.com/api
+      - key: REACT_APP_PUBLIC_URL
+        value: https://airbnb-guest.onrender.com
+
+  # Host/Admin workspace frontend.
+  - type: static
+    name: airstay-admin-frontend
+    rootDir: admin-frontend
+    buildCommand: npm ci && CI=false npm run build
+    publishPath: build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://airbnb-zq1x.onrender.com/api
+      - key: REACT_APP_PUBLIC_URL
+        value: https://airbnb-guest.onrender.com

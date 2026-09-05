@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import HeroBanner from '../components/HeroBanner';
 
 const inspiration = [
-  { name: 'Cape Town', distance: '2,150 kilometres away', image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=900&q=85' },
+  { name: 'Cape Town', distance: '2,150 kilometres away', image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=85' },
   { name: 'Paris', distance: '8,720 kilometres away', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Kyoto', distance: '13,090 kilometres away', image: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Amalfi Coast', distance: '7,910 kilometres away', image: 'https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?auto=format&fit=crop&w=900&q=85' },
+  { name: 'Tokyo', distance: '13,090 kilometres away', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=900&q=85' },
+  { name: 'New York', distance: '12,640 kilometres away', image: 'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=85' },
 ];
 
 const getaways = {
