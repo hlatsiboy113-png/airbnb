@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeroBanner from '../components/HeroBanner';
+import SearchBar from '../components/SearchBar';
 
 const inspiration = [
   { name: 'Cape Town', distance: '2,150 kilometres away', image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=85' },
@@ -24,7 +25,10 @@ function HomePage() {
 
   return (
     <div className="home-page">
-      <HeroBanner />
+      <div className="home-hero-wrap">
+        <HeroBanner />
+        <div className="home-search-float"><SearchBar /></div>
+      </div>
 
       <section className="content-section page-shell" aria-labelledby="inspiration-heading">
         <div className="section-heading">

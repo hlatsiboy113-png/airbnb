@@ -10,6 +10,7 @@ const ViewListings = () => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [filterText, setFilterText] = useState('');
   const navigate = useNavigate();
   const workspaceBase = isAdmin ? '/admin' : '/host';
 
@@ -29,9 +30,14 @@ const ViewListings = () => {
   useEffect(() => { fetchListings(); }, []);
 
   const visibleListings = useMemo(() => {
-    if (isAdmin) return listings;
-    return listings.filter((listing) => (listing.host?._id || listing.host)?.toString() === user?._id?.toString());
-  }, [isAdmin, listings, user?._id]);
+    const scoped = isAdmin ? listings : listings.filter((listing) => (listing.host?._id || listing.host)?.toString() === user?._id?.toString());
+    const q = filterText.trim().toLowerCase();
+    if (!q) return scoped;
+    return scoped.filter((listing) => (
+      String(listing.title || '').toLowerCase().includes(q) ||
+      String(listing.location || '').toLowerCase().includes(q)
+    ));
+  }, [isAdmin, listings, user?._id, filterText]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this listing? This action cannot be undone.')) return;
@@ -55,9 +61,22 @@ const ViewListings = () => {
         <div><p className="workspace-eyebrow">{isAdmin ? 'Platform inventory' : 'Your portfolio'}</p><h1>{isAdmin ? 'All listings' : 'Your listings'}</h1></div>
         <button className="btn btn-primary" type="button" onClick={() => navigate(`${workspaceBase}/create`)}>Create listing</button>
       </div>
+      <div className="workspace-search-row" role="search">
+        <input
+          className="list-filter-input"
+          type="text"
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="Search by title or location"
+          aria-label={`Search ${isAdmin ? 'all' : 'your'} listings`}
+        />
+        {listings.length > 0 && !loading && <span className="list-filter-count">{visibleListings.length} of {listings.length} shown</span>}
+      </div>
       {error && <div className="alert alert-error" role="alert">{error}<button type="button" onClick={fetchListings}>Try again</button></div>}
       {notice && <div className="alert alert-success" role="status">{notice}</div>}
-      {visibleListings.length === 0 ? (
+      {listings.length > 0 && visibleListings.length === 0 ? (
+        <div className="workspace-empty"><h2>No matches</h2><p>No listings match “{filterText}”. Try a different title or location.</p><button className="btn btn-primary" type="button" onClick={() => setFilterText('')}>Clear filter</button></div>
+      ) : visibleListings.length === 0 ? (
         <div className="workspace-empty"><h2>No listings yet</h2><p>Create your first listing to begin hosting.</p><button className="btn btn-primary" type="button" onClick={() => navigate(`${workspaceBase}/create`)}>Create listing</button></div>
       ) : (
         <div className="listing-table-wrap">

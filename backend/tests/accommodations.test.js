@@ -38,6 +38,28 @@ describe('GET /api/accommodations', () => {
     const passedFilter = Accommodation.find.mock.calls[0][0];
     expect(passedFilter.location.source).toBe('\\(unclosed');
   });
+
+  it('applies a minimum guest count filter when the guests query is present', async () => {
+    Accommodation.find.mockReturnValue({
+      populate: jest.fn().mockResolvedValue([{ _id: 'a1', title: 'Villa', guests: 6 }]),
+    });
+
+    const res = await request(app).get('/api/accommodations').query({ location: 'Cape Town', guests: '4' });
+    expect(res.status).toBe(200);
+
+    const passedFilter = Accommodation.find.mock.calls[0][0];
+    expect(passedFilter.guests).toEqual({ $gte: 4 });
+  });
+
+  it('omits the guest filter when guests is absent or not greater than 1', async () => {
+    Accommodation.find.mockReturnValue({ populate: jest.fn().mockResolvedValue([]) });
+
+    const res = await request(app).get('/api/accommodations').query({ guests: '1' });
+    expect(res.status).toBe(200);
+
+    const passedFilter = Accommodation.find.mock.calls[0][0];
+    expect(passedFilter).not.toHaveProperty('guests');
+  });
 });
 
 describe('GET /api/accommodations/:id', () => {

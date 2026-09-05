@@ -44,6 +44,28 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dropdown-item:hover { background: var(--wash); }
 .dropdown-item.logout { color: var(--coral); border-top: 1px solid #eee; }
 
+/* ===== SEGMENTED SEARCH BAR (Where / When / Who) ===== */
+.airstay-search-bar { display: flex; width: 100%; height: 50px; align-items: center; padding: 5px; background: #fff; border: 1px solid var(--line); border-radius: 40px; box-shadow: 0 1px 2px rgba(0,0,0,.08); transition: box-shadow var(--ease-out), border-color var(--ease-out); }
+.airstay-search-bar:hover, .airstay-search-bar:focus-within { border-color: transparent; box-shadow: var(--shadow-card); }
+.airstay-search-bar .search-section { position: relative; display: grid; min-width: 0; flex: 1 1 0; gap: 2px; padding: 4px 14px; border-radius: 36px; cursor: pointer; transition: background var(--ease-out); }
+.airstay-search-bar .search-section:hover, .airstay-search-bar .search-section.active { background: var(--wash); }
+.airstay-search-bar .search-section label { font-size: 11px; font-weight: 700; line-height: 1.1; }
+.airstay-search-bar .search-section input { width: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; text-overflow: ellipsis; }
+.airstay-search-bar .search-section input::placeholder { color: var(--muted); font-weight: 500; }
+.airstay-search-bar .search-value { overflow: hidden; color: var(--muted); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.airstay-search-bar > .search-divider { width: 1px; height: 26px; flex: 0 0 1px; background: var(--line); }
+.airstay-search-bar .search-popover { position: absolute; z-index: 200; top: calc(100% + 12px); left: 0; display: grid; width: min(400px, calc(100vw - 32px)); gap: 14px; padding: 18px; background: #fff; border-radius: 16px; box-shadow: var(--shadow-float); }
+.airstay-search-bar .search-popover-who { width: min(300px, calc(100vw - 32px)); display: flex; align-items: center; justify-content: space-between; }
+.airstay-search-bar .search-popover .date-field { display: grid; gap: 6px; padding: 0; border: 0; }
+.airstay-search-bar .search-popover .date-field label { display: block; font-size: 10px; font-weight: 700; margin: 0 0 4px; text-transform: uppercase; }
+.airstay-search-bar .search-popover .date-field input { width: 100%; height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit; outline: 0; }
+.airstay-search-bar .search-popover .date-field input:focus { border-color: var(--ink); }
+.airstay-search-bar .guest-stepper { display: flex; align-items: center; gap: 14px; }
+.airstay-search-bar .guest-stepper button { display: grid; width: 32px; height: 32px; place-items: center; background: #fff; border: 1px solid var(--ink); border-radius: 50%; color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; transition: background var(--ease-out); }
+.airstay-search-bar .guest-stepper button:hover:not(:disabled) { background: var(--wash); }
+.airstay-search-bar .guest-stepper button:disabled { border-color: var(--line); color: var(--muted); cursor: not-allowed; opacity: .55; }
+.airstay-search-bar .search-btn { width: 38px; height: 38px; flex: 0 0 38px; }
+
 /* ===== LOGIN MODAL ===== */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal-content { background: #fff; padding: 32px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 8px 28px rgba(0,0,0,0.28); }
@@ -397,6 +419,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .workspace-eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .workspace-heading h1 { margin: 0; font-size: clamp(27px, 4vw, 32px); letter-spacing: -1px; line-height: 1.12; }
 .workspace-subtitle { margin: 9px 0 0; color: var(--muted); }
+
+/* ===== WORKSPACE SEARCH & FILTER ===== */
+.workspace-search-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 22px; }
+.workspace-search-form { display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px; max-width: 520px; }
+.list-filter-input { min-width: 0; height: 42px; flex: 1; padding: 0 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: 14px; transition: border-color var(--ease-out), box-shadow var(--ease-out); }
+.list-filter-input:focus { border-color: var(--ink); outline: 0; box-shadow: 0 0 0 3px rgba(34,34,34,.08); }
+.list-filter-input::placeholder { color: var(--muted); }
+.list-filter-count { flex: 0 0 auto; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .btn { min-height: 40px; padding: 0 15px; border: 1px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 700; transition: background var(--ease-out), transform var(--ease-out); }
 .btn:active { transform: scale(.97); }
 .btn-primary { background: var(--coral); color: #fff; }

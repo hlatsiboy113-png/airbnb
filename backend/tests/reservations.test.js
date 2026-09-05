@@ -360,6 +360,128 @@ describe('PUT /api/reservations/:id', () => {
 });
 
 
+describe('GET /api/reservations/host', () => {
+  it('rejects a guest (403) and keeps host scope authoritative', async () => {
+    const res = await request(app)
+      .get('/api/reservations/host')
+      .set('Authorization', authHeaderFor('guest1'));
+
+    expect(res.status).toBe(403);
+    expect(Reservation.find).not.toHaveBeenCalled();
+  });
+
+  it('restricts the query to the authenticated host even when a q filter is used', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    Reservation.find.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          sort: jest.fn().mockResolvedValue([
+            {
+              _id: 'r1',
+              accommodation: { title: 'Beach Villa', location: 'Cape Town' },
+              user: { username: 'alice', email: 'alice@example.com' },
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/reservations/host')
+      .query({ q: 'alice' })
+      .set('Authorization', authHeaderFor('host1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(Reservation.find).toHaveBeenCalledWith(
+      expect.objectContaining({ host: 'host1' })
+    );
+  });
+
+  it('filters by guest name, accommodation title, or location (case-insensitive)', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    Reservation.find.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          sort: jest.fn().mockResolvedValue([
+            {
+              _id: 'r1',
+              accommodation: { title: 'Beach Villa', location: 'Cape Town' },
+              user: { username: 'alice', email: 'alice@example.com' },
+            },
+            {
+              _id: 'r2',
+              accommodation: { title: 'City Loft', location: 'Johannesburg' },
+              user: { username: 'bob', email: 'bob@example.com' },
+            },
+            {
+              _id: 'r3',
+              accommodation: { title: 'Riverside Cabin', location: 'Cape Winelands' },
+              user: { username: 'carol', email: 'carol@example.com' },
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/reservations/host')
+      .query({ q: 'cape' })
+      .set('Authorization', authHeaderFor('host1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((r) => r._id)).toEqual(['r1', 'r3']);
+  });
+
+  it('returns an empty result for a q that matches nothing', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    Reservation.find.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          sort: jest.fn().mockResolvedValue([
+            {
+              _id: 'r1',
+              accommodation: { title: 'Beach Villa', location: 'Cape Town' },
+              user: { username: 'alice', email: 'alice@example.com' },
+            },
+          ]),
+        }),
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/reservations/host')
+      .query({ q: 'zzz-no-match' })
+      .set('Authorization', authHeaderFor('host1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+  });
+
+  it('returns all host reservations when no q is provided', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    Reservation.find.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          sort: jest.fn().mockResolvedValue([
+            { _id: 'r1', totalCost: 100 },
+            { _id: 'r2', totalCost: 200 },
+          ]),
+        }),
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/reservations/host')
+      .set('Authorization', authHeaderFor('host1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(2);
+    expect(res.body.data).toHaveLength(2);
+  });
+});
+
+
 describe('GET /api/reservations/host/stats', () => {
   it('returns host reservation, earnings, and upcoming metrics (200)', async () => {
     User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });

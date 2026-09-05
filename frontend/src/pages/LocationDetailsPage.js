@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api, { getImageUrl } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const readDateParam = (searchParams, key, fallback) => {
+  const value = searchParams.get(key);
+  const parsed = new Date(value);
+  return value && !Number.isNaN(parsed.getTime()) ? value : fallback;
+};
+
+const readGuestsParam = (searchParams) => {
+  const raw = Number(searchParams.get('guests'));
+  return Number.isInteger(raw) && raw >= 1 ? raw : 1;
+};
+
 const LocationDetailsPage = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [acc, setAcc] = useState(null);
@@ -14,9 +26,9 @@ const LocationDetailsPage = () => {
   // Calculator state
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const dayAfterTomorrow = new Date(Date.now() + 172800000).toISOString().split('T')[0];
-  const [checkIn, setCheckIn] = useState(tomorrow);
-  const [checkOut, setCheckOut] = useState(dayAfterTomorrow);
-  const [guests, setGuests] = useState(1);
+  const [checkIn, setCheckIn] = useState(() => readDateParam(searchParams, 'checkIn', tomorrow));
+  const [checkOut, setCheckOut] = useState(() => readDateParam(searchParams, 'checkOut', dayAfterTomorrow));
+  const [guests, setGuests] = useState(() => readGuestsParam(searchParams));
   const [reserving, setReserving] = useState(false);
   const [reserveMsg, setReserveMsg] = useState('');
   const [activeImage, setActiveImage] = useState(null);
@@ -69,6 +81,7 @@ const LocationDetailsPage = () => {
 
     const guestCount = Number(guests);
     const maxGuests = Number(acc?.guests || 1);
+    const safeGuests = Math.min(Math.max(guestCount, 1), maxGuests);
 
     if (!checkIn || !checkOut) {
       setReserveMsg('Please select both check-in and check-out dates.');
@@ -92,7 +105,7 @@ const LocationDetailsPage = () => {
         accommodation: id,
         checkIn,
         checkOut,
-        guests: guestCount,
+        guests: safeGuests,
         totalCost,
       });
       setReserveMsg('Reservation confirmed. Your trip details are ready in My reservations.');
@@ -257,7 +270,7 @@ const LocationDetailsPage = () => {
               </div>
               <div className="guest-field">
                 <label>GUESTS</label>
-                <select value={guests} onChange={(e) => setGuests(e.target.value)}>
+                <select value={Math.min(Number(guests), Math.max(acc.guests || 1, 1))} onChange={(e) => setGuests(e.target.value)}>
                   {Array.from({ length: Math.max(acc.guests || 1, 1) }, (_, i) => (
                     <option key={i + 1} value={i + 1}>{i + 1} guest{i > 0 ? 's' : ''}</option>
                   ))}

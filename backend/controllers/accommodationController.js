@@ -16,8 +16,13 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  */
 const getAccommodations = async (req, res, next) => {
   try {
-    const { location } = req.query;
+    const { location, guests } = req.query;
     const filter = location ? { location: new RegExp(escapeRegex(location), 'i') } : {};
+
+    const minGuests = Number.parseInt(guests, 10);
+    if (Number.isInteger(minGuests) && minGuests > 1) {
+      filter.guests = { $gte: minGuests };
+    }
 
     const accommodations = await Accommodation.find(filter).populate('host', 'username');
 

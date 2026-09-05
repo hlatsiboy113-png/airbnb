@@ -57,8 +57,6 @@ const Header = () => {
             <span>Where</span>
             <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search destinations" aria-label="Where do you want to go?" />
           </label>
-          <button type="button" onClick={() => document.activeElement?.blur()} className="search-divider"><span>Any week</span></button>
-          <button type="button" onClick={() => document.activeElement?.blur()} className="search-divider muted-search"><span>Add guests</span></button>
           <button type="submit" className="search-submit" aria-label="Search stays"><SearchIcon /></button>
         </form>
       )}

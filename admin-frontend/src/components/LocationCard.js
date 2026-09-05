@@ -2,13 +2,14 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getImageUrl } from '../services/api';
 
-const LocationCard = ({ accommodation }) => {
+const LocationCard = ({ accommodation, to }) => {
   const navigate = useNavigate();
   const { _id, images, type, title, location, amenities, rating, reviews, price } = accommodation;
   const imageUrl = images && images.length > 0 ? getImageUrl(images[0]) : null;
+  const target = to || `/listing/${_id}`;
 
   return (
-    <div className="location-card" onClick={() => navigate(`/listing/${_id}`)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/listing/${_id}`); } }}>
+    <div className="location-card" onClick={() => navigate(target)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(target); } }}>
       <div className="location-card-image">
         {imageUrl ? <img src={imageUrl} alt={`${title} — ${location || 'property'}`} loading="lazy" /> : <div className="no-image" role="img" aria-label="No image available">No Image</div>}
       </div>

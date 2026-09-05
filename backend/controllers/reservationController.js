@@ -187,7 +187,21 @@ const getHostReservations = async (req, res, next) => {
       .populate('accommodation', 'title location price images')
       .populate('user', 'username email')
       .sort({ createdAt: -1 });
-    res.status(200).json({ status: 'success', count: reservations.length, data: reservations });
+
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
+    const filtered = q
+      ? reservations.filter((r) => {
+          const haystack = [
+            r.accommodation && r.accommodation.title,
+            r.accommodation && r.accommodation.location,
+            r.user && r.user.username,
+            r.user && r.user.email,
+          ].filter(Boolean).map((field) => String(field).toLowerCase());
+          return haystack.some((field) => field.includes(q));
+        })
+      : reservations;
+
+    res.status(200).json({ status: 'success', count: filtered.length, data: filtered });
   } catch (error) {
     next(error);
   }
