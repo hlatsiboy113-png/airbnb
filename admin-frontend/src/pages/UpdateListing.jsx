@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import ListingForm from '../components/ListingForm';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Update Listing Page
@@ -10,6 +11,8 @@ import ListingForm from '../components/ListingForm';
 const UpdateListing = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const workspaceBase = user?.role === 'admin' ? '/admin' : '/host';
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -47,7 +50,7 @@ const UpdateListing = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSuccess('Listing updated successfully!');
-      setTimeout(() => navigate('/admin/dashboard'), 1500);
+      setTimeout(() => navigate(`${workspaceBase}/dashboard`), 1500);
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to update listing';
       setError(message);
@@ -68,7 +71,7 @@ const UpdateListing = () => {
     return (
       <div style={containerStyle} className="container">
         <div className="alert alert-error">{error}</div>
-        <button onClick={() => navigate('/admin/dashboard')} className="btn btn-secondary">
+        <button onClick={() => navigate(`${workspaceBase}/dashboard`)} className="btn btn-secondary">
           Back to Dashboard
         </button>
       </div>

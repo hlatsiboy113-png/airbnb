@@ -112,7 +112,7 @@ const ListingForm = ({ initialData = null, onSubmit, isUpdate = false, loading =
             placeholder="e.g., Modern Apartment in New York"
             className={errors.title ? 'error-border' : ''}
           />
-          {errors.title && <span className="error">{errors.title}</span>}
+          {errors.title && <span className="field-error">{errors.title}</span>}
         </div>
 
         <div className="form-group">
@@ -126,7 +126,7 @@ const ListingForm = ({ initialData = null, onSubmit, isUpdate = false, loading =
             placeholder="e.g., New York"
             className={errors.location ? 'error-border' : ''}
           />
-          {errors.location && <span className="error">{errors.location}</span>}
+          {errors.location && <span className="field-error">{errors.location}</span>}
         </div>
 
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -162,7 +162,7 @@ const ListingForm = ({ initialData = null, onSubmit, isUpdate = false, loading =
             min="0"
             className={errors.price ? 'error-border' : ''}
           />
-          {errors.price && <span className="error">{errors.price}</span>}
+          {errors.price && <span className="field-error">{errors.price}</span>}
         </div>
 
         <div className="form-group">
@@ -282,7 +282,7 @@ const ListingForm = ({ initialData = null, onSubmit, isUpdate = false, loading =
           >
             {isUpdate ? 'Change Images' : 'Upload Images'}
           </button>
-          {errors.images && <span className="error">{errors.images}</span>}
+          {errors.images && <span className="field-error">{errors.images}</span>}
 
           {previewUrls.length > 0 && (
             <div style={previewGridStyle}>

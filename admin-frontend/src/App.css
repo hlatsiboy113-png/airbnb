@@ -439,6 +439,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .alert button { padding: 5px 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; }
 .alert-error { background: #fff0f2; color: #a80c2b; }
 .alert-success { background: #eaf7f1; color: #126b43; }
+.field-error { display: block; color: #a80c2b; font-size: 12px; margin-top: 4px; }
+.form-group input.error-border { border-color: #a80c2b; }
 .workspace-skeleton, .route-loading { display: grid; min-height: 235px; place-items: center; border-radius: 12px; color: var(--muted); }
 .workspace-skeleton { background: linear-gradient(110deg, #ededed 8%, #f8f8f8 18%, #ededed 33%); background-size: 200% 100%; animation: workspace-loading 1.25s linear infinite; }
 @keyframes workspace-loading { to { background-position-x: -200%; } }
