@@ -30,10 +30,11 @@ export const AuthProvider = ({ children }) => {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       try {
         const response = await api.get('/users/me');
+        if (localStorage.getItem('token') !== token) return;
         setUser(response.data.data);
         localStorage.setItem('user', JSON.stringify(response.data.data));
       } catch (err) {
-        if (err.response?.status === 401) {
+        if (err.response?.status === 401 && localStorage.getItem('token') === token) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           delete api.defaults.headers.common.Authorization;
