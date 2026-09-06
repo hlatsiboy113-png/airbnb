@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import api, { BACKEND_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+const currency = (value) => `R${Number(value || 0).toLocaleString('en-ZA')}`;
+
 const SearchIcon = () => (
   <svg aria-hidden="true" viewBox="0 0 24 24" style={{ width: '18px', height: '18px', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" /></svg>
 );
@@ -96,10 +98,10 @@ const HostReservations = () => {
               <div className="reservation-info">
                 <h3>{r.accommodation?.title}</h3>
                 <p>Guest: {r.user?.username} ({r.user?.email})</p>
-                <p>Check-in: {new Date(r.checkIn).toLocaleDateString()}</p>
-                <p>Check-out: {new Date(r.checkOut).toLocaleDateString()}</p>
+                <p>Check-in: {new Date(r.checkIn).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</p>
+                <p>Check-out: {new Date(r.checkOut).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</p>
                 <p>Guests: {r.guests}</p>
-                <p className="reservation-cost">Total: ${r.totalCost?.toFixed(2)}</p>
+                <p className="reservation-cost">Total: {currency(r.totalCost)}</p>
               </div>
             </div>
           ))}
