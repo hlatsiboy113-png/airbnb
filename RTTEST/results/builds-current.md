@@ -3,6 +3,23 @@
 Both React applications build cleanly in production mode. Each `build/` artifact
 is safe to host on any static server (Render static site, Vercel, nginx).
 
+## Run 2026-09-16 — login UX pass (CURRENT, supersedes hashes below)
+
+Rebuilt both apps after adding the password visibility toggle to
+`frontend/src/pages/LoginPage.jsx` and `admin-frontend/src/pages/LoginPage.jsx`
+(plus `.password-field` / `.password-toggle` CSS in each `App.css`). Same command
+shape and `REACT_APP_API_URL` as above. Output for both: `Compiled successfully.`
+
+| App | JS bundle (gzip) | CSS bundle | Result |
+|---|---|---|---|
+| Guest (`frontend/`) | `build/static/js/main.af97f372.js` | `build/static/css/main.fc144aa4.css` (7.19 kB) | PASS |
+| Admin/host (`admin-frontend/`) | `build/static/js/main.82091dc2.js` | `build/static/css/main.308b3253.css` (7.63 kB) | PASS |
+
+(Hash drift vs the run below is expected — new login markup/CSS changed the
+bundle content. The **deployed** bundles on Render are still the older
+`guest/main.cc838128.js` and `admin/main.d0b960c0.js`; shipping these newer
+bundles requires an operational redeploy, which is out of scope for a code pass.)
+
 ## Run 2026-09-16 (this consolidation pass — CURRENT VERIFIED)
 
 Commands (identical shape for both apps; the `prebuild` guard refuses to build

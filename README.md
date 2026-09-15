@@ -121,22 +121,24 @@ All API paths below use the `/api` prefix. Routes marked **Private** require an 
 ## Testing & Verification
 
 Start with the evidence inventory: [`RTTEST/inventory.md`](RTTEST/inventory.md).
-It labels every result **CURRENT VERIFIED** (rerun 2026-09-15),
+It labels every result **CURRENT VERIFIED** (rerun 2026-09-15 and 2026-09-16),
 **HISTORICAL** (earlier claim, not independently rerun), or **OUTSTANDING**.
 
 Run the checks yourself:
 
 ```bash
-cd backend && npm test                 # 4 suites · 51 tests — all pass
+cd backend && npm test                 # 4 suites · 72 tests — all pass
 cd ../frontend && CI=true npm run build   # requires REACT_APP_API_URL
 cd ../admin-frontend && CI=true npm run build
 ```
 
-| Check | Status (2026-09-15) |
+| Check | Status (2026-09-16) |
 |---|---|
-| Backend automated tests (Jest + Supertest, no DB required) | **PASS — 51/51 (4 suites)** |
+| Backend automated tests (Jest + Supertest, no DB required) | **PASS — 72/72 (4 suites)** |
 | Guest frontend production build | **PASS** |
 | Host/administrator frontend production build | **PASS** |
+| Password visibility toggle (guest + host/admin login) | **DONE** — build-verified |
+| Data-mutation safety (no writes on page load) | **VERIFIED** — GET-only on mount |
 | Guest/admin frontend unit tests | **none exist** (0 files — `react-scripts test` exits "No tests found") |
 | E2E harness | **none in repository**; earlier "host-flow 25/25 × 3" runs are historical claims (see `RTTEST/historical/`) |
 | Live deployment probes (401/400/404 guards, CORS, SPA rewrites) | **PASS** — `RTTEST/results/deployment-current.md` |
@@ -156,5 +158,6 @@ deployments.
 ## Assessment Evidence
 
 - Rubric → evidence map: [`RTTEST/evidence/rubric-evidence-matrix.md`](RTTEST/evidence/rubric-evidence-matrix.md)
+- Final verification report (2026-09-16): [`RTTEST/evidence/final-verification-report.md`](RTTEST/evidence/final-verification-report.md)
 - Screenshot checklist (still to be captured): [`RTTEST/evidence/screenshot-checklist.md`](RTTEST/evidence/screenshot-checklist.md)
 - Historical verification records: [`RTTEST/historical/README.md`](RTTEST/historical/README.md)

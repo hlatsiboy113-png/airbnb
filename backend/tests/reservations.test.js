@@ -510,3 +510,48 @@ describe('GET /api/reservations/host/stats', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('GET /api/reservations (requireAdmin gate)', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('rejects an unauthenticated request (401)', async () => {
+    const res = await request(app).get('/api/reservations');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a host trying to view all platform reservations (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    const res = await request(app)
+      .get('/api/reservations')
+      .set('Authorization', authHeaderFor('host1'));
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/administrator/i);
+  });
+
+  it('rejects a guest (403)', async () => {
+    const res = await request(app)
+      .get('/api/reservations')
+      .set('Authorization', authHeaderFor('guest1'));
+    expect(res.status).toBe(403);
+  });
+
+  it('allows an admin to list every reservation (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    Reservation.find.mockReturnValue({
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockReturnValue({
+            sort: jest.fn().mockResolvedValue([{ _id: 'r1', totalCost: 100 }]),
+          }),
+        }),
+      }),
+    });
+
+    const res = await request(app)
+      .get('/api/reservations')
+      .set('Authorization', authHeaderFor('admin1'));
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+  });
+});

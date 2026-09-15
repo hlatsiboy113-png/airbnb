@@ -221,6 +221,11 @@ img { display: block; max-width: 100%; }
 .auth-footer a { color: var(--ink); font-weight: 700; text-decoration: none; }
 .auth-footer .host-prompt { margin-top: 6px; font-size: 13px; }
 .error-banner { padding: 12px; margin: 0 0 16px; background: #fff1f1; border-radius: 8px; color: #b42121; font-size: 13px; }
+.password-field { position: relative; }
+.password-field input { padding-right: 72px; }
+.password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 7px 10px; background: transparent; border: 0; border-radius: 6px; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.password-toggle:hover { background: var(--wash); }
+.password-toggle:focus-visible { outline: 2px solid var(--coral); outline-offset: 1px; }
 .reservations-list { display: grid; gap: 16px; margin-top: 28px; }
 .reservation-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; padding: 22px; background: #fff; border: 1px solid #ebebeb; border-radius: 14px; box-shadow: var(--shadow-card); }
 .reservation-card h2 { margin: 0 0 4px; font-size: 18px; letter-spacing: -.3px; }

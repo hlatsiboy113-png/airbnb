@@ -121,3 +121,136 @@ describe('POST /api/accommodations (auth + role gating)', () => {
     expect(res.body.data.title).toBe('New Place');
   });
 });
+
+describe('PUT /api/accommodations/:id (auth + ownership)', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('rejects an unauthenticated request (401)', async () => {
+    const res = await request(app)
+      .put('/api/accommodations/507f1f77bcf86cd799439011')
+      .field('title', 'x');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a logged-in guest (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'u1', role: 'user' });
+    const res = await request(app)
+      .put('/api/accommodations/507f1f77bcf86cd799439011')
+      .set('Authorization', authHeaderFor('u1'))
+      .field('title', 'x');
+    expect(res.status).toBe(403);
+  });
+
+  it('rejects a host who does not own the listing (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'u2', role: 'host' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+
+    const res = await request(app)
+      .put('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('u2'))
+      .field('title', 'Takeover attempt');
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/not authorized/i);
+    expect(Accommodation.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('allows the owning host to update their listing (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'u1', role: 'host' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+    Accommodation.findByIdAndUpdate.mockResolvedValue({ _id: 'a1', title: 'Updated Place', host: 'u1' });
+
+    const res = await request(app)
+      .put('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('u1'))
+      .field('title', 'Updated Place');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.title).toBe('Updated Place');
+    expect(Accommodation.findByIdAndUpdate).toHaveBeenCalled();
+  });
+
+  it('allows an admin to update another host\'s listing (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+    Accommodation.findByIdAndUpdate.mockResolvedValue({ _id: 'a1', title: 'Admin Editorial', host: 'u1' });
+
+    const res = await request(app)
+      .put('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('admin1'))
+      .field('title', 'Admin Editorial');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.title).toBe('Admin Editorial');
+  });
+
+  it('returns 404 when the listing does not exist', async () => {
+    User.findById.mockResolvedValue({ _id: 'u1', role: 'host' });
+    Accommodation.findById.mockResolvedValue(null);
+
+    const res = await request(app)
+      .put('/api/accommodations/507f1f77bcf86cd799439011')
+      .set('Authorization', authHeaderFor('u1'))
+      .field('title', 'x');
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/accommodations/:id (auth + ownership)', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('rejects an unauthenticated request (401)', async () => {
+    const res = await request(app).delete('/api/accommodations/507f1f77bcf86cd799439011');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a host who does not own the listing (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'u2', role: 'host' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+
+    const res = await request(app)
+      .delete('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('u2'));
+
+    expect(res.status).toBe(403);
+    expect(Accommodation.findByIdAndDelete).not.toHaveBeenCalled();
+  });
+
+  it('rejects a guest (403) even when the listing exists', async () => {
+    User.findById.mockResolvedValue({ _id: 'g1', role: 'user' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+
+    const res = await request(app)
+      .delete('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('g1'));
+
+    expect(res.status).toBe(403);
+  });
+
+  it('allows the owning host to delete their listing (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'u1', role: 'host' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+    Accommodation.findByIdAndDelete.mockResolvedValue({ _id: 'a1' });
+
+    const res = await request(app)
+      .delete('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('u1'));
+
+    expect(res.status).toBe(200);
+    expect(Accommodation.findByIdAndDelete).toHaveBeenCalledWith('a1');
+  });
+
+  it('allows an admin to delete any listing (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    Accommodation.findById.mockResolvedValue({ _id: 'a1', host: 'u1' });
+    Accommodation.findByIdAndDelete.mockResolvedValue({ _id: 'a1' });
+
+    const res = await request(app)
+      .delete('/api/accommodations/a1')
+      .set('Authorization', authHeaderFor('admin1'));
+
+    expect(res.status).toBe(200);
+    expect(Accommodation.findByIdAndDelete).toHaveBeenCalledWith('a1');
+  });
+});

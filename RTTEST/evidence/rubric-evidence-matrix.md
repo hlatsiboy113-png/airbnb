@@ -19,11 +19,11 @@ Target totals: **Admin Dashboard 100 · Frontend Clone 140 · Node.js Backend 15
 | Requirement | Implementation | Automated verification | Screenshot evidence | Evidence ID | Status | Notes |
 |---|---|---|---|---|---|---|
 | Role gate for admin/host functions | `backend/middleware/auth.js` `requireHost`/`requireAdmin`; admin `App.js` routes | `auth.test.js` wrong-role 403; live no-token 401 probes | none | — | PASS | Also live `/api/reservations/host` 401 |
-| Login by email+password, role routing | `admin-frontend/src/pages/LoginPage.jsx`, `App.js` `WorkspaceLanding` | authenticated flows in `auth.test.js`; live login 401/400 | none | — | PARTIAL | needs visual proof |
+| Login by email+password, role routing | `admin-frontend/src/pages/LoginPage.jsx`, `App.js` `WorkspaceLanding`; password visibility toggle added both apps 2026-09-16 | authenticated flows in `auth.test.js`; live login 401/400 | none | — | PARTIAL | needs visual proof |
 | Admin/all-listings view + CRUD | `admin-frontend/src/pages/ViewListings.jsx` (admin context) | no automated CRUD test; build PASS | none | — | PARTIAL | add live admin pass |
-| Host/listing CRUD (create/view/update/delete) | `CreateListing/UpdateListing/ViewListings.jsx`, `ListingForm.jsx` | `accommodations.test.js` create gating (401/403/201) only; **no PUT/DELETE test** | none | — | PARTIAL | outstanding: PUT/DELETE coverage |
-| Users management + role change | `admin-frontend/src/pages/ManageUsers.jsx`; `userController.js` admin routes | no automated admin-route test | none | — | OUTSTANDING | only static review |
-| Platform reservations view | `admin-frontend/src/pages/AllReservations.jsx`; `reservationController.js` | `reservations.test.js` (22) covers API behaviour | none | — | PARTIAL | visual proof needed |
+| Host/listing CRUD (create/view/update/delete) | `CreateListing/UpdateListing/ViewListings.jsx`, `ListingForm.jsx` | `accommodations.test.js` — create gating (401/403/201) + **PUT/DELETE ownership (401/403/404/200 owner/200 admin)** | none | — | PARTIAL | admin edit/delete screens need visual proof; write-path auth now automated |
+| Users management + role change | `admin-frontend/src/pages/ManageUsers.jsx`; `userController.js` admin routes | `auth.test.js` admin-route tests (`GET /api/users` 401/403/200; role change 403/200; self-demotion 400) | none | — | PARTIAL | API gate automated; ManageUsers screen needs visual proof |
+| Platform reservations view | `admin-frontend/src/pages/AllReservations.jsx`; `reservationController.js` | `reservations.test.js` (26) covers API behaviour + **`GET /api/reservations` admin gate (401/403/200)** | none | — | PARTIAL | visual proof needed |
 | Sign-out + token clearing | `admin-frontend/src/components/Header.jsx` logout | none | none | — | PARTIAL | code-verified only |
 | Rubric-exact routing (host vs admin) | `admin-frontend/src/App.js` route table | build PASS | none | — | PARTIAL | click-through proof needed |
 
@@ -36,7 +36,7 @@ Target totals: **Admin Dashboard 100 · Frontend Clone 140 · Node.js Backend 15
 | Location results: filters, count, cards, states | `frontend/src/pages/LocationPage.js` | `accommodations.test.js` filter/list; build PASS | none | — | PARTIAL | loading/empty/error visual |
 | Property details: gallery, amenities, reviews, host, rules, costs | `frontend/src/pages/LocationDetailsPage.js` | `get by id` covered; build PASS | none | — | PARTIAL | visual proof |
 | Reservation/cost calculator | `LocationDetailsPage.js` panel; server recomputes totals | `reservations.test.js` total/date/guest/overlap (server side) | none | — | PASS | UI still needs visual proof → PARTIAL at full rubric |
-| Auth flows on guest side | `LoginPage.jsx`, `RegisterPage.jsx`, `AuthContext.js`, `ProtectedRoute.jsx` | `auth.test.js` (16) + live 401/400/403 | none | — | PASS | redirect visuals pending |
+| Auth flows on guest side | `LoginPage.jsx`, `RegisterPage.jsx`, `AuthContext.js`, `ProtectedRoute.jsx` | `auth.test.js` (22) + live 401/400/403 | none | — | PASS | redirect visuals pending |
 | Responsive 1440/768/390 | CSS responsive rules (design notes) | none | none | — | OUTSTANDING | no evidence captured |
 | Brand look (coral `#FF385C`, type, radius) | global styles + `PRODUCT_EXPERIENCE.md` | build PASS | none | — | PARTIAL | visual proof |
 
@@ -45,12 +45,12 @@ Target totals: **Admin Dashboard 100 · Frontend Clone 140 · Node.js Backend 15
 | Requirement | Implementation | Automated verification | Screenshot evidence | Evidence ID | Status | Notes |
 |---|---|---|---|---|---|---|
 | Structure: controllers/models/routes/middleware/app+server | `backend/**` | `health.test.js` (app wiring) | — | — | PASS | |
-| Accommodation CRUD | `accommodationController.js` | read/list/create in `accommodations.test.js` | — | — | PARTIAL | PUT/DELETE untested |
-| Ownership checks + admin override | `requireOwnerOrAdmin` wiring | static review only | — | — | OUTSTANDING | needs test/live pass |
+| Accommodation CRUD | `accommodationController.js` | read/list/create + **PUT/DELETE ownership** in `accommodations.test.js` | — | — | PASS | |
+| Ownership checks + admin override | `requireOwnerOrAdmin` wiring | `accommodations.test.js` PUT/DELETE owner vs non-owner vs admin (403/200) | — | — | PASS | |
 | Validation (required/numeric) | controllers via `AppError` | 400 paths in suites | — | — | PASS | |
-| Register/login hashed passwords | `userController.js` bcrypt | `auth.test.js` (16) | — | — | PASS | |
+| Register/login hashed passwords | `userController.js` bcrypt | `auth.test.js` (22) | — | — | PASS | |
 | JWT issue/validate/expiry/roles | `middleware/auth.js` | `auth.test.js` (valid/expired/invalid 401, role 403) | — | — | PASS | |
-| Reservation CRUD + cancel | `reservationController.js` | `reservations.test.js` (22) | — | — | PASS | |
+| Reservation CRUD + cancel | `reservationController.js` | `reservations.test.js` (26) | — | — | PASS | |
 | Server-side totals | reservation controller calc | "correct total cost breakdown" test | — | — | PASS | |
 | Date/guest validation | controller validation | past-date 400, capacity 400 tests | — | — | PASS | |
 | Overlap detection create+update | controller overlap check | 400-on-overlap tests | — | — | PASS | |
@@ -59,7 +59,7 @@ Target totals: **Admin Dashboard 100 · Frontend Clone 140 · Node.js Backend 15
 | Mongoose relationships/population | `Reservation.js` populate | static review only | — | — | OUTSTANDING | add population smoke check |
 | CORS allow-list, no open access | `backend/app.js` | live `Access-Control-Allow-Origin` probe | — | — | PASS | |
 | Secrets via env only, no `.env` tracked | `.gitignore` + `.env.example` | repo scan | — | — | PASS | |
-| Tests expanded for confirmed gaps | 4 suites, 51 tests | rerun 2026-09-16 all green | — | — | PASS | PUT/DELETE accommodation gap remains |
+| Tests expanded for confirmed gaps | 4 suites, 72 tests | rerun 2026-09-16 all green (51 → 72: PUT/DELETE ownership, admin routes) | — | — | PASS | backend write-path gaps closed |
 
 ## Historical records (preserved, not reverified)
 
@@ -67,7 +67,7 @@ Target totals: **Admin Dashboard 100 · Frontend Clone 140 · Node.js Backend 15
 |---|---|---|
 | Backend 40/40 PASS | `DEPLOYMENT_QA_REPORT.md` (2026-09-04) | HISTORICAL |
 | Backend 44/44 PASS | committed `RENDER_REDEPLOY.md` (2026-09-05) | HISTORICAL |
-| Backend 51/51 PASS | working-tree `RENDER_REDEPLOY.md` (2026-09-05) | HISTORICAL — now re-verified current (2026-09-16) |
+| Backend 51/51 PASS | working-tree `RENDER_REDEPLOY.md` (2026-09-05) | HISTORICAL — now re-verified current (2026-09-16 → 72/72) |
 | Host-flow E2E 25/25 × 3 runs | working-tree `RENDER_REDEPLOY.md` (2026-09-05) | HISTORICAL — no harness/artifact exists |
 
 See [`../historical/README.md`](../historical/README.md).
@@ -75,8 +75,10 @@ See [`../historical/README.md`](../historical/README.md).
 ## Outstanding blockers to full marks
 
 1. **Screenshots** (visual proof) — none exist; capture per checklist.
-2. Accommodation PUT/DELETE automated test.
-3. Admin user/role-route automated test.
-4. Live authenticated CRUD pass (create/update/delete) against production.
-5. Mongoose population smoke check.
-6. Responsive captures at 1440 / 768 / 390.
+2. Live authenticated CRUD pass (create/update/delete) against production.
+3. Mongoose population smoke check.
+4. Responsive captures at 1440 / 768 / 390.
+
+> Resolved 2026-09-16: accommodation PUT/DELETE authorization and admin
+> user/role-route authorization are now covered by automated tests (see Area 1
+> and Area 3 rows above).

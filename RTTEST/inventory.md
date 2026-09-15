@@ -25,22 +25,35 @@ test-only value.
 
 | Test file | Location | Type | # tests | Purpose | Related functionality | Result |
 |---|---|---|---|---|---|---|
-| `auth.test.js` | `backend/tests/auth.test.js` | API / unit (mocked) | 16 | Login (missing fields 400, unknown email 401, wrong password 401, success + JWT round-trip 200, wrong sign-in role 403), registration (incomplete 400, duplicate email 409, guest 201, host 201, admin coercion never promoted 201-with-user-role), `/users/me` (no token 401, invalid token 401, valid token 200, expired token 401), `/users/seed` (blocked 404 in production, available 201 in test) | Authentication, JWT, role enforcement, admin-account protection | CURRENT VERIFIED (16/16) |
-| `accommodations.test.js` | `backend/tests/accommodations.test.js` | API / unit (mocked) | 10 | GET list, regex-safe location filter, guest-count filter, GET by id (404 missing, 400 malformed ObjectId, 200 success), POST gating (401 unauthenticated, 403 logged-in guest, 201 host create) | Accommodation CRUD, auth/authorization, validation | CURRENT VERIFIED (10/10) |
-| `reservations.test.js` | `backend/tests/reservations.test.js` | API / unit (mocked) | 22 | POST create (401, over-capacity 400, bad dates 400, correct server-side total 201, overlap 400, non-overlap 201, past check-in 400), DELETE (403 non-owner, 200 owner), GET user (scoped 200, empty 200), PUT (200 owner, 403 non-owner, 400 past check-in, 400 overlap), GET host (403 guest, host-scoped query, q filtering, empty result, all), host stats (200, 403 guest) | Reservations, costing, overlap detection, ownership | CURRENT VERIFIED (22/22) |
+| `auth.test.js` | `backend/tests/auth.test.js` | API / unit (mocked) | 22 | Login (missing fields 400, unknown email 401, wrong password 401, success + JWT round-trip 200, wrong sign-in role 403), registration (incomplete 400, duplicate email 409, guest 201, host 201, admin coercion never promoted 201-with-user-role), `/users/me` (no token 401, invalid token 401, valid token 200, expired token 401), `/users/seed` (blocked 404 in production, available 201 in test), **admin routes `/api/users` (unauthenticated 401, host 403, admin list 200, host role-change 403, admin role-change 200, admin self-demotion blocked 400)** | Authentication, JWT, role enforcement, admin-account protection, admin routing | CURRENT VERIFIED (22/22) |
+| `accommodations.test.js` | `backend/tests/accommodations.test.js` | API / unit (mocked) | 21 | GET list, regex-safe location filter, guest-count filter, GET by id (404 missing, 400 malformed ObjectId, 200 success), POST gating (401 unauthenticated, 403 logged-in guest, 201 host create), **PUT gating + ownership (401, 403 guest, 403 non-owner host, 200 owner, 200 admin override, 404 missing), DELETE gating + ownership (401, 403 non-owner host, 403 guest, 200 owner, 200 admin override)** | Accommodation CRUD, auth/authorization, ownership, validation | CURRENT VERIFIED (21/21) |
+| `reservations.test.js` | `backend/tests/reservations.test.js` | API / unit (mocked) | 26 | POST create (401, over-capacity 400, bad dates 400, correct server-side total 201, overlap 400, non-overlap 201, past check-in 400), DELETE (403 non-owner, 200 owner), GET user (scoped 200, empty 200), PUT (200 owner, 403 non-owner, 400 past check-in, 400 overlap), GET host (403 guest, host-scoped query, q filtering, empty result, all), host stats (200, 403 guest), **GET /api/reservations admin gate (401, 403 host, 403 guest, 200 admin)** | Reservations, costing, overlap detection, ownership, admin oversight | CURRENT VERIFIED (26/26) |
 | `health.test.js` | `backend/tests/health.test.js` | API | 3 | GET /health 200, unknown route 404 JSON, root 404 | app.js wiring, error handler | CURRENT VERIFIED (3/3) |
 | `setup-env.js` | `backend/tests/setup-env.js` | config | — | Sets `NODE_ENV=test` and a test-only `JWT_SECRET` | Test bootstrap | n/a |
 
-**Backend suite total: 51/51 passing, 4 suites — CURRENT VERIFIED.**
+**Backend suite total: 72/72 passing, 4 suites — CURRENT VERIFIED.**
 Evidence: `RTTEST/results/backend-current.txt` (raw Jest output, rerun
-2026-09-15 and 2026-09-16).
+2026-09-15 and 2026-09-16). On 2026-09-16 the suite grew from 51 → 72 with the
+accommodation PUT/DELETE ownership tests (11), admin `/api/users` route tests (6),
+and admin `GET /api/reservations` gate tests (4) — closing the accommodation
+write-path and admin-routing coverage gaps.
 
 ## 2. Frontend builds
 
 | Check | Command | Result | Evidence | Status |
 |---|---|---|---|---|
-| Guest frontend production build | `cd frontend && CI=true npm run build` (requires `REACT_APP_API_URL`) | PASS — `main.1ce4bf69.js` (gzip 82.29 kB) | `RTTEST/results/builds-current.md` | CURRENT VERIFIED (2026-09-15 & 2026-09-16) |
-| Admin/host frontend production build | `cd admin-frontend && CI=true npm run build` (requires `REACT_APP_API_URL`) | PASS — `main.522db9c2.js` (gzip 83.49 kB) | `RTTEST/results/builds-current.md` | CURRENT VERIFIED (2026-09-16) |
+| Guest frontend production build | `cd frontend && CI=true npm run build` (requires `REACT_APP_API_URL`) | PASS — `main.af97f372.js` (post login-toggle build 2026-09-16) | `RTTEST/results/builds-current.md` | CURRENT VERIFIED (2026-09-15 & 2026-09-16) |
+| Admin/host frontend production build | `cd admin-frontend && CI=true npm run build` (requires `REACT_APP_API_URL`) | PASS — `main.82091dc2.js` (post login-toggle build 2026-09-16) | `RTTEST/results/builds-current.md` | CURRENT VERIFIED (2026-09-16) |
+
+## 2.1 Login UX & data-mutation safety pass (2026-09-16)
+
+| Check | Result | Evidence |
+|---|---|---|
+| Password visibility toggle on guest login | **DONE** — `frontend/src/pages/LoginPage.jsx` (+ `.password-field`/`.password-toggle` CSS in `frontend/src/App.css`) | build PASS; toggle = `<button>`, `aria-pressed`, `aria-label`, no form submit, no API call, value preserved |
+| Password visibility toggle on admin/host login | **DONE** — `admin-frontend/src/pages/LoginPage.jsx` (+ same CSS in `admin-frontend/src/App.css`) | build PASS |
+| Default state remains masked (`type="password"`) | **VERIFIED** by code | both login pages |
+| No accidental write requests on page load | **VERIFIED** — every mounted page issues GET-only calls (`/users/me`, `/accommodations...`, `/reservations...`); all POST/PUT/PATCH/DELETE sites are inside explicit user gestures (login, register, reserve, cancel, create, update, delete, role change) | grep audit of `api.*(` call sites in both apps |
+| No duplicate/refetch-loop API calls | **VERIFIED** — one fetch per mount/param change; AuthContext restores the session with a single `/users/me`; `LocationPage`/`LocationDetailsPage` guard races with request-sequence refs | code audit 2026-09-16 |
 
 ## 3. Frontend automated tests
 
@@ -68,7 +81,7 @@ apps; the steps are in `RTTEST/e2e/index.md`.
 |---|---|---|---|---|
 | Backend tests 40/40 PASS | `DEPLOYMENT_QA_REPORT.md` ("Step 8 — Build & Test Verification", "Final Report") | committed 2026-09-04 | 40 suites-pass | HISTORICAL |
 | Backend suite 44/44 PASS | committed `RENDER_REDEPLOY.md` (git `HEAD` version) | committed 2026-09-05 | 44 passing | HISTORICAL |
-| Backend suite 51/51 PASS | current `RENDER_REDEPLOY.md` (working tree) | 2026-09-05 claim | 51 passing | HISTORICAL claim, **superseded by CURRENT VERIFIED rerun** (2026-09-15 → 51/51) |
+| Backend suite 51/51 PASS | current `RENDER_REDEPLOY.md` (working tree) | 2026-09-05 claim | 51 passing | HISTORICAL claim, **superseded by CURRENT VERIFIED rerun** (2026-09-16 → 72/72) |
 | Host-flow E2E 25/25 PASS × 3 runs | current `RENDER_REDEPLOY.md` (working tree) | 2026-09-05 claim | 25/25 | HISTORICAL — no rerunnable harness/artefact |
 | Deleted test patch `0003-test-backend-add-mocked-Jest-Supertest-suite.patch` (6831 lines) | git history — commit `25754831` added it; commit `3eeb5be` deleted it | 2026-09-01 → 2026-09-04 | — | HISTORICAL (contents superseded by live `backend/tests/*`) |
 | Phase 1 & 2 manual testing guide | `testing/PHASE1_TESTING_GUIDE.md` | Phase 1/2 | — | HISTORICAL manual guidance (checklist; not an automated suite) |

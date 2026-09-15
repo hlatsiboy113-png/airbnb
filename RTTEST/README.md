@@ -12,9 +12,11 @@ rubric row, and what still needs to be produced honestly.
 
 | Check | Result |
 |---|---|
-| Backend automated tests (`cd backend && npm test`) | **PASS — 51/51 (4 suites)** |
+| Backend automated tests (`cd backend && npm test`) | **PASS — 72/72 (4 suites)** |
 | Guest frontend production build (`CI=true npm run build`) | **PASS** |
 | Admin/host frontend production build (`CI=true npm run build`) | **PASS** |
+| Login password visibility toggle (guest + host/admin) | **DONE** — build-verified |
+| Frontend data-mutation safety (no writes on page load) | **VERIFIED** — GET-only on mount; mutations are user-gesture only |
 | Frontend automated tests | **none exist** (exit 1, "No tests found" — recorded, not claimed) |
 | E2E harness | **none in repository** — 25/25 host-flow runs are HISTORICAL claims only |
 | Live deployment probes (Render) | **PASS** per listed check |
@@ -38,6 +40,7 @@ rubric row, and what still needs to be produced honestly.
 | Screenshot register (currently: none found) | [`evidence/screenshot-register.md`](evidence/screenshot-register.md) | — |
 | Screenshot capture checklist (what to shoot) | [`evidence/screenshot-checklist.md`](evidence/screenshot-checklist.md) | — |
 | Screenshot collection point (empty until captured) | [`evidence/screenshots/README.md`](evidence/screenshots/README.md) | — |
+| Final verification report (2026-09-16 phase) | [`evidence/final-verification-report.md`](evidence/final-verification-report.md) | — |
 
 ## Layout
 
@@ -59,7 +62,8 @@ RTTEST/
 
 ## Honest bottom line
 
-Backend behaviour (51/51), both builds, and the live deployment guard rails are
+Backend behaviour (72/72), both builds, the login visibility toggle, the
+data-mutation safety review, and the live deployment guard rails are
 **current verified**. There are **no screenshots** and **no E2E harness** in the
 repository; the host-flow 25/25 claim is historical and stored as such. Frontend
 visual/rubric proof remains **PARTIAL/OUTSTANDING** until real captures exist.

@@ -7,6 +7,7 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -74,9 +75,12 @@ const LoginPage = () => {
             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter your email" className={errors.email ? 'error-border' : ''} />
             {errors.email && <span className="field-error">{errors.email}</span>}
           </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" className={errors.password ? 'error-border' : ''} />
+          <div className="form-group password-field">
+            <label htmlFor="workspace-login-password">Password</label>
+            <input id="workspace-login-password" type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Enter your password" className={errors.password ? 'error-border' : ''} />
+            <button type="button" className="password-toggle" onClick={() => setShowPassword((v) => !v)} aria-pressed={showPassword} aria-label={showPassword ? 'Hide password' : 'View password'}>
+              {showPassword ? 'Hide' : 'View'}
+            </button>
             {errors.password && <span className="field-error">{errors.password}</span>}
           </div>
           <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>

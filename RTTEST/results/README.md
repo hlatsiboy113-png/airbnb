@@ -14,7 +14,7 @@ cd ../frontend      && CI=true npm test               # result: "No tests found"
 
 | File | What it contains | Result |
 |---|---|---|
-| [`backend-current.txt`](backend-current.txt) | Raw Jest output (`npm test` → `jest --runInBand`) | `Test Suites: 4 passed, 4 total · Tests: 51 passed, 51 total · Time: ~13.7 s` |
+| [`backend-current.txt`](backend-current.txt) | Raw Jest output (`npm test` → `jest --runInBand`) | `Test Suites: 4 passed, 4 total · Tests: 72 passed, 72 total` |
 | [`builds-current.md`](builds-current.md) | Both production builds (guest + admin) | PASS × 2 |
 | [`deployment-current.md`](deployment-current.md) | Live Render checks (API + 2 SPAs) | PASS per listed check |
 

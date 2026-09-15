@@ -218,3 +218,70 @@ describe('POST /api/users/seed', () => {
     expect(res.status).toBe(201);
   });
 });
+
+describe('Admin routes /api/users (requireAdmin gate)', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('rejects unauthenticated access to GET /api/users (401)', async () => {
+    const res = await request(app).get('/api/users');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a host trying to list all users (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    const res = await request(app)
+      .get('/api/users')
+      .set('Authorization', `Bearer ${jwt.sign({ userId: 'host1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/administrator/i);
+  });
+
+  it('allows an admin to list users (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    User.find.mockReturnValue({
+      sort: jest.fn().mockResolvedValue([{ _id: 'u1', username: 'Jane', role: 'host' }]),
+    });
+
+    const res = await request(app)
+      .get('/api/users')
+      .set('Authorization', `Bearer ${jwt.sign({ userId: 'admin1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(User.find).toHaveBeenCalled();
+  });
+
+  it('rejects a host trying to change a role (403)', async () => {
+    User.findById.mockResolvedValue({ _id: 'host1', role: 'host' });
+    const res = await request(app)
+      .patch('/api/users/u1/role')
+      .set('Authorization', `Bearer ${jwt.sign({ userId: 'host1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`)
+      .send({ role: 'host' });
+    expect(res.status).toBe(403);
+  });
+
+  it('allows an admin to change a role (200)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    User.findByIdAndUpdate.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ _id: 'u1', username: 'Jane', role: 'host' }),
+    });
+
+    const res = await request(app)
+      .patch('/api/users/u1/role')
+      .set('Authorization', `Bearer ${jwt.sign({ userId: 'admin1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`)
+      .send({ role: 'host' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.role).toBe('host');
+  });
+
+  it('blocks an admin from demoting themselves (400)', async () => {
+    User.findById.mockResolvedValue({ _id: 'admin1', role: 'admin' });
+    const res = await request(app)
+      .patch('/api/users/admin1/role')
+      .set('Authorization', `Bearer ${jwt.sign({ userId: 'admin1' }, process.env.JWT_SECRET, { expiresIn: '1h' })}`)
+      .send({ role: 'user' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/own administrator role/i);
+  });
+});

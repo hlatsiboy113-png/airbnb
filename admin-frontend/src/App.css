@@ -344,6 +344,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .host-prompt { margin-top: 12px; font-size: 13px; color: var(--muted); }
 .role-select { width: 100%; padding: 12px; border: 1px solid #b0b0b0; border-radius: 8px; font-size: 15px; background: #fff; }
 .role-select:focus { border-color: var(--ink); }
+.password-field { position: relative; }
+.password-field input { padding-right: 72px; }
+.password-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 7px 10px; background: transparent; border: 0; border-radius: 6px; color: var(--ink); font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.password-toggle:hover { background: var(--wash); }
+.password-toggle:focus-visible { outline: 2px solid var(--coral); outline-offset: 1px; }
 
 /* ===== DASHBOARDS ===== */
 .dashboard-page { padding: 40px 24px; }
