@@ -1,5 +1,14 @@
 # AirStay — Production Deployment Preparation Report
 
+> T3 reconciliation (2026-09-10): the services were ultimately deployed to
+> **Render** for all three services (not Vercel). Live URLs:
+> backend `https://airbnb-zq1x.onrender.com/api`, guest
+> `https://airbnb-guest.onrender.com`, host/admin
+> `https://airbnb-1-e7hp.onrender.com`. The SPA rewrite rules (`/*` →
+> `/index.html`) required below were applied as Render redirects/rewrites; the
+> `vercel.json` files remain for any future Vercel use. All values in the
+> Deployment Plan tables are updated to the live configuration below.
+
 This report documents the preparation of the current, working AirStay application
 (backend + guest frontend + admin/host frontend) for manual deployment to
 **Render** (backend) and **Vercel** (both frontends), backed by the existing
@@ -130,10 +139,10 @@ No secrets were committed. Nothing was committed, pushed, or deployed.
 | Build Command | `npm install` (no build step required) |
 | Start Command | `npm start` (runs `node server.js`) |
 | Runtime | Node 18 |
-| Environment variables | `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`, `CORS_ORIGIN` (both Vercel domains), `PORT` (Render provides automatically) |
+| Environment variables | `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`, `CORS_ORIGIN=https://airbnb-guest.onrender.com,https://airbnb-1-e7hp.onrender.com`, `PORT` (Render provides automatically) |
 | Health Check Path | `/health` |
 
-### VERCEL — Guest
+### VERCEL — Guest (superseded by Render static site `airbnb-guest`)
 
 | Setting | Value |
 |---------|-------|
@@ -141,10 +150,10 @@ No secrets were committed. Nothing was committed, pushed, or deployed.
 | Build Command | `npm run build` |
 | Output Directory | `build` |
 | Framework Preset | Create React App |
-| Environment variables | `REACT_APP_API_URL=https://YOUR-RENDER-BACKEND/api` |
-| | `REACT_APP_ADMIN_URL=https://YOUR-ADMIN-VERCEL-APP` |
+| Environment variables | `REACT_APP_API_URL=https://airbnb-zq1x.onrender.com/api` |
+| | `REACT_APP_ADMIN_URL=https://airbnb-1-e7hp.onrender.com` |
 
-### VERCEL — Admin/Host
+### VERCEL — Admin/Host (superseded by Render static site `airbnb-1-e7hp`)
 
 | Setting | Value |
 |---------|-------|
@@ -152,8 +161,8 @@ No secrets were committed. Nothing was committed, pushed, or deployed.
 | Build Command | `npm run build` |
 | Output Directory | `build` |
 | Framework Preset | Create React App |
-| Environment variables | `REACT_APP_API_URL=https://YOUR-RENDER-BACKEND/api` |
-| | `REACT_APP_PUBLIC_URL=https://YOUR-GUEST-VERCEL-APP` |
+| Environment variables | `REACT_APP_API_URL=https://airbnb-zq1x.onrender.com/api` |
+| | `REACT_APP_PUBLIC_URL=https://airbnb-guest.onrender.com` |
 
 ### FINAL VERDICT
 

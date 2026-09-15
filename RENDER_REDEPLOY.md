@@ -1,22 +1,25 @@
 # Production Redeploy Checklist (owner action)
 
-The code is verified working; production still runs an OLD backend build and
-stale frontend bundles. These steps deploy repo HEAD cleanly.
+Production now runs current repo code (verified live: null-safe login returns
+401 on unknown email; live guest bundle `main.cc838128.js`, admin
+`main.d0b960c0.js`). These steps deploy repo HEAD after future changes.
 
 ## Preflight (already proven)
 
-- Backend suite: `44/44` PASS (`cd backend && npm test`)
+- Backend suite: `51/51` PASS across 4 suites (`cd backend && npm test`)
 - Host-flow E2E vs live Atlas data shape: `25/25` PASS (3 consecutive runs)
 - Both frontend production builds PASS; bundles bake in
   `https://airbnb-zq1x.onrender.com/api` and the `/host/update/:id` route
-- Production Atlas healthy: jane/john/admin exist with valid bcrypt hashes
-  (`jane / password321` → match true); DB clean (10 users, 24 listings,
-  0 reservations)
+- Production Atlas healthy: admin/host/guest roles exist with valid bcrypt
+  hashes; live data verified 2026-09-10 (18 users incl. 1 QA account,
+  27 accommodations, 8 reservations)
 
 ## 1. Backend — `airbnb-zq1x` (Rebuild & Deploy)
 
-- Redeploy from `main` at `0e16d7d` (must run repo HEAD; the earlier
-  `50cb005` trigger never reached the live service).
+- Redeploy from `main` at `c7ddd5b` (repo HEAD as of last full verification).
+  After T1, both frontends require `REACT_APP_API_URL` to be set at build time
+  (the prebuild guard fails the build otherwise) — the blueprint env below
+  provides it.
 - Ensure env vars on the service:
   - `NODE_ENV=production` (required: server.js and auth gating read it)
   - `MONGO_URI` (required at boot — otherwise `server.js` throws)
@@ -24,9 +27,9 @@ stale frontend bundles. These steps deploy repo HEAD cleanly.
   - `CORS_ORIGIN=https://airbnb-guest.onrender.com,https://airbnb-1-e7hp.onrender.com`
 - Verify:
   - `GET /health` → 200
-  - host login `jane@example.com / password321` (role host) → 200 + token
-  - guest login `john@example.com / password123` (role guest) → 200
-  - admin login `admin@example.com / admin123` (role admin) → 200
+  - host login (role host, seeded dev account) → 200 + token
+  - guest login (role guest, seeded dev account) → 200
+  - admin login (role admin, seeded dev account) → 200
   - unknown email login → 401 `Invalid email or password`
   - `POST /api/accommodations` with garbage Bearer → 401 `Invalid token`
   - `GET /api/reservations/host` no token → 401
@@ -37,7 +40,8 @@ stale frontend bundles. These steps deploy repo HEAD cleanly.
   Redirects/Rewrites): source `/*` → destination `/index.html`, type `rewrite`.
 - Build env: `REACT_APP_API_URL=https://airbnb-zq1x.onrender.com/api`,
   `REACT_APP_PUBLIC_URL=https://airbnb-guest.onrender.com`
-- Rebuild & deploy (current live bundle `main.959065b6.js` is stale).
+- Rebuild & deploy on future changes (current live bundle is
+  `main.cc838128.js`).
 - Verify: `GET /login` and `GET /` both serve HTML (200, not 404).
 
 ## 3. Host/Admin workspace — `airbnb-1-e7hp`

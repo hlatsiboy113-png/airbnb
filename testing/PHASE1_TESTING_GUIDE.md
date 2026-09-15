@@ -25,14 +25,14 @@ Content-Type: application/json
   "data": [
     { "username": "John Doe", "email": "john@example.com", "role": "user" },
     { "username": "Jane Doe", "email": "jane@example.com", "role": "host" },
-    { "username": "Admin User", "email": "admin@example.com", "role": "admin" }
+    { "username": "Admin User", "role": "admin" }
   ]
 }
 ```
 
 **Verify:**
 - [ ] Response status is 201
-- [ ] 3 users returned
+- [ ] 3 users returned (admin account is seeded from the backend seed accounts; its email is not documented here — see `backend/.env.example` for the environment-variable naming, or the seed definition in code)
 - [ ] Passwords are NOT visible in response (hashed in DB)
 - [ ] Check MongoDB Atlas — passwords should be bcrypt hashes
 
@@ -48,7 +48,7 @@ Content-Type: application/json
 
 {
   "email": "jane@example.com",
-  "password": "password321"
+  "password": "<host password set at seed — not documented>"
 }
 ```
 
@@ -456,7 +456,7 @@ Content-Type: application/json
 
 #### 8a. Successful Login
 - Enter email: `jane@example.com`
-- Enter password: `password321`
+- Enter password: (the host password set at seed)
 - Click "Sign In"
 
 **Verify:**
